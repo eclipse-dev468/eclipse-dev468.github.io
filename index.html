@@ -9,34 +9,39 @@
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #0a0a0f;
-            font-family: 'Orbitron', sans-serif;
+            background-color: #0a0a0f; font-family: 'Orbitron', sans-serif;
             overflow: hidden; color: white; user-select: none;
         }
 
-        /* TOP BAR (Monete e Titolo) */
+        /* TOP BAR */
         #topBar {
             position: absolute; top: 0; left: 0; width: 100%;
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 30px; box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            background: linear-gradient(180deg, rgba(10,10,15,0.9) 0%, rgba(10,10,15,0) 100%);
             z-index: 15;
         }
         .logo { font-size: 1.5em; font-weight: 900; color: #00ff88; text-shadow: 0 0 10px #00ff88; }
         .coins-display {
-            background: rgba(0, 0, 0, 0.6); border: 1px solid #ffd700;
+            background: rgba(0, 0, 0, 0.8); border: 1px solid #ffd700;
             padding: 8px 15px; border-radius: 8px; font-size: 1.2em; color: #ffd700;
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 0 10px rgba(255,215,0,0.3);
         }
 
-        /* LAYOUT PRINCIPALE */
+        /* LAYOUT E CANVAS */
         #screenContainer {
             position: relative; width: 100vw; height: 100vh;
             display: flex; justify-content: center; align-items: center;
         }
-        canvas { background-color: #1a2f1a; box-shadow: 0 0 50px rgba(0, 255, 136, 0.2); border-radius: 10px; display: none; }
+        canvas { 
+            background-color: #1a2f1a; 
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.1); 
+            border-radius: 10px; 
+            display: none; 
+            max-width: 100%; max-height: 100%;
+        }
 
-        /* OVERLAY UI */
+        /* OVERLAY UI (Menù) */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 15, 0.95); display: flex; flex-direction: column;
@@ -44,32 +49,29 @@
         }
         .hidden { display: none !important; }
 
-        /* BOTTONI STILE NEON */
+        /* BOTTONI */
         .btn {
             background: transparent; color: #00ff88; border: 2px solid #00ff88;
             padding: 15px 40px; font-size: 1.2em; font-family: 'Orbitron', sans-serif;
-            cursor: pointer; border-radius: 5px; transition: all 0.2s;
-            text-transform: uppercase; font-weight: bold; margin: 10px;
-            width: 300px;
+            cursor: pointer; border-radius: 8px; transition: all 0.2s;
+            text-transform: uppercase; font-weight: bold; margin: 10px; width: 320px;
         }
         .btn:hover { background: #00ff88; color: #0a0a0f; box-shadow: 0 0 30px #00ff88; transform: scale(1.05); }
         .btn-red { color: #e63946; border-color: #e63946; }
         .btn-red:hover { background: #e63946; color: #fff; box-shadow: 0 0 30px #e63946; }
 
-        /* MENU INIZIALE */
         h1 { font-size: 4em; margin: 0; color: #00ff88; text-shadow: 0 0 20px #00ff88; }
         h2 { color: #e63946; margin-bottom: 30px; }
 
-        /* NEGOZIO E SQUADRA LISTE */
+        /* LISTE (Negozio/Squadra) */
         .list-container {
             width: 80%; max-width: 800px; height: 60vh; overflow-y: auto;
-            background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 10px;
+            background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 10px;
             padding: 20px; margin-top: 20px;
         }
         .item-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-bottom: 1px solid #333;
-            transition: background 0.2s;
+            padding: 15px; border-bottom: 1px solid #333; transition: background 0.2s;
         }
         .item-row:hover { background: rgba(255,255,255,0.05); }
         .item-name { font-size: 1.2em; font-weight: bold; }
@@ -80,32 +82,31 @@
         }
         .item-btn:disabled { background: #555; cursor: not-allowed; }
 
-        /* HUD GIOCO */
-        #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: center; z-index: 5; pointer-events: none; }
+        /* HUD PARTITA */
+        #hud { position: absolute; top: 70px; width: 100%; display: flex; justify-content: center; z-index: 5; pointer-events: none; }
         .scoreboard {
-            background: rgba(0, 0, 0, 0.8); border: 2px solid #e63946; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.85); border: 2px solid #e63946; border-radius: 10px;
             padding: 10px 30px; display: flex; align-items: center; gap: 20px;
             font-size: 2em; font-weight: 900; box-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
         }
         .team-name { color: #fff; font-size: 0.6em; letter-spacing: 2px; }
-        #timer { color: #00ff88; }
+        #timer { color: #00ff88; font-size: 1.2em; }
 
         /* EFFETTO GOAL */
         .goal-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 6em; color: #00ff88; text-shadow: 0 0 40px #00ff88;
-            font-weight: 900; z-index: 20; display: none; animation: popIn 0.5s;
+            font-weight: 900; z-index: 20; display: none; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        /* RISULTATO FINALE */
+        /* RISULTATO */
         #resultScreen { text-align: center; }
         .final-score { font-size: 5em; color: #fff; margin: 20px 0; text-shadow: 0 0 20px #fff; }
     </style>
 </head>
 <body>
 
-    <!-- BARRA SUPERIORE -->
     <div id="topBar">
         <div class="logo">ECLIPSE</div>
         <div class="coins-display">
@@ -117,32 +118,36 @@
     <div id="screenContainer">
         <!-- 1. MENU PRINCIPALE -->
         <div id="mainMenu" class="screen">
-            <h1>PRO LEAGUE</h1>
-            <h2>2D SIMULATION</h2>
-            <button class="btn" onclick="startSimulation()">GIOCA PARTITA</button>
-            <button class="btn" onclick="openTeam()">LA TUA SQUADRA</button>
-            <button class="btn" onclick="openShop()">NEGOZIO</button>
+            <h1>ECLIPSE FC</h1>
+            <h2>PRO LEAGUE 2D</h2>
+            <button class="btn" onclick="startMatch()">GIOCA PARTITA</button>
+            <button class="btn" onclick="openScreen('teamScreen')">LA TUA SQUADRA</button>
+            <button class="btn" onclick="openScreen('shopScreen')">NEGOZIO</button>
+            <button class="btn" onclick="openScreen('packScreen')">PACCHETTI</button>
         </div>
 
-        <!-- 2. SCHERMATA SQUADRA -->
+        <!-- 2. SQUADRA -->
         <div id="teamScreen" class="screen hidden">
             <h2>ECLIPSE FC - ROSA</h2>
-            <div class="list-container" id="teamList">
-                <!-- Lista generata da JS -->
-            </div>
+            <div class="list-container" id="teamList"></div>
             <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
         </div>
 
-        <!-- 3. SCHERMATA NEGOZIO -->
+        <!-- 3. NEGOZIO -->
         <div id="shopScreen" class="screen hidden">
             <h2>MERCATO GIOCATORI</h2>
-            <div class="list-container" id="shopList">
-                <!-- Lista generata da JS -->
-            </div>
+            <div class="list-container" id="shopList"></div>
             <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
         </div>
 
-        <!-- 4. PARTITA E HUD -->
+        <!-- 4. PACCHETTI -->
+        <div id="packScreen" class="screen hidden">
+            <h2>APRI PACCHETTI</h2>
+            <div class="list-container" id="packList" style="height: 40vh;"></div>
+            <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
+        </div>
+
+        <!-- 5. PARTITA E HUD -->
         <div id="hud" class="hidden">
             <div class="scoreboard">
                 <div class="team-name">ECLIPSE FC</div>
@@ -156,7 +161,7 @@
         <div id="goalText" class="goal-text">GOAL!</div>
         <canvas id="gameCanvas"></canvas>
 
-        <!-- 5. RISULTATO FINALE -->
+        <!-- 6. FINE PARTITA -->
         <div id="resultScreen" class="screen hidden">
             <h2>FINE PARTITA</h2>
             <div class="final-score" id="finalScore">0 - 0</div>
@@ -166,20 +171,19 @@
 
     <script>
         // ==========================================
-        // 1. GESTIONE DATI (Monete, Squadra, Negozio)
+        // 1. DATI DI GIOCO (NOMI INVENTATI)
         // ==========================================
         let coins = 1000;
         
-        // ECLIPSE FC (Nomi completamente inventati)
         let myTeam = [
             { name: "L. VANCE", ovr: 114, pos: "ATT" },
             { name: "K. RYDER", ovr: 116, pos: "ATT" },
             { name: "M. KANE", ovr: 65, pos: "POR" },
             { name: "D. ROCKS", ovr: 68, pos: "DIF" },
-            { name: "S. BLADE", ovr: 67, pos: "DIF" }
+            { name: "S. BLADE", ovr: 67, pos: "DIF" },
+            { name: "J. STORM", ovr: 72, pos: "CEN" }
         ];
 
-        // Mercato (Nomi inventati)
         let shopData = [
             { name: "C. VELTRO", ovr: 99, price: 800 },
             { name: "L. ASTRO", ovr: 98, price: 700 },
@@ -188,27 +192,27 @@
             { name: "V. FALCO", ovr: 95, price: 520 }
         ];
 
-        function updateCoinsUI() {
-            document.getElementById('coinAmount').innerText = coins;
-        }
+        function updateCoinsUI() { document.getElementById('coinAmount').innerText = coins; }
 
         // ==========================================
-        // 2. GESTIONE SCHERMATE (UI)
+        // 2. GESTIONE SCHERMATE UI
         // ==========================================
         function backToMenu() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('mainMenu').classList.remove('hidden');
-            document.getElementById('teamScreen').classList.add('hidden');
-            document.getElementById('shopScreen').classList.add('hidden');
-            document.getElementById('resultScreen').classList.add('hidden');
         }
 
-        function openTeam() {
+        function openScreen(id) {
             document.getElementById('mainMenu').classList.add('hidden');
-            document.getElementById('teamScreen').classList.remove('hidden');
-            
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'teamScreen') renderTeam();
+            if(id === 'shopScreen') renderShop();
+            if(id === 'packScreen') renderPacks();
+        }
+
+        function renderTeam() {
             const container = document.getElementById('teamList');
             container.innerHTML = '';
-            
             myTeam.sort((a,b) => b.ovr - a.ovr).forEach(p => {
                 container.innerHTML += `
                     <div class="item-row">
@@ -222,55 +226,74 @@
             });
         }
 
-        function openShop() {
-            document.getElementById('mainMenu').classList.add('hidden');
-            document.getElementById('shopScreen').classList.remove('hidden');
-            renderShop();
-        }
-
         function renderShop() {
             const container = document.getElementById('shopList');
             container.innerHTML = '';
-            
             shopData.forEach((p, index) => {
-                let buttonHtml = `<button class="item-btn" onclick="buyPlayer(${index})" ${coins < p.price ? 'disabled' : ''}>ACQUISTA (${p.price} AC)</button>`;
-                
+                let btn = `<button class="item-btn" onclick="buyPlayer(${index})" ${coins < p.price ? 'disabled' : ''}>ACQUISTA (${p.price})</button>`;
                 container.innerHTML += `
                     <div class="item-row">
-                        <div>
-                            <div class="item-name">${p.name}</div>
-                            <div style="color: #00ff88;">${p.ovr} OVR</div>
-                        </div>
-                        ${buttonHtml}
-                    </div>
-                `;
+                        <div><div class="item-name">${p.name}</div><div style="color: #00ff88;">${p.ovr} OVR</div></div>
+                        ${btn}
+                    </div>`;
             });
         }
 
         function buyPlayer(index) {
-            const player = shopData[index];
-            if (coins >= player.price) {
-                coins -= player.price;
-                myTeam.push({ name: player.name, ovr: player.ovr, pos: "CEN" });
+            const p = shopData[index];
+            if (coins >= p.price) {
+                coins -= p.price; updateCoinsUI();
+                myTeam.push({ name: p.name, ovr: p.ovr, pos: "CEN" });
                 shopData.splice(index, 1);
-                updateCoinsUI();
                 renderShop();
-                alert(`Hai acquistato ${player.name}!`);
+                alert(`Hai acquistato ${p.name}!`);
+            }
+        }
+
+        function renderPacks() {
+            const container = document.getElementById('packList');
+            container.innerHTML = `
+                <div class="item-row">
+                    <div><div class="item-name">PACCHETTO BRONZE</div><div style="color: #cd7f32;">50 AC</div></div>
+                    <button class="item-btn" onclick="buyPack(50)">APRI</button>
+                </div>
+                <div class="item-row">
+                    <div><div class="item-name">PACCHETTO SILVER</div><div style="color: #b0b0b0;">100 AC</div></div>
+                    <button class="item-btn" onclick="buyPack(100)">APRI</button>
+                </div>
+                <div class="item-row">
+                    <div><div class="item-name">PACCHETTO GOLD</div><div style="color: #ffd700;">200 AC</div></div>
+                    <button class="item-btn" onclick="buyPack(200)">APRI</button>
+                </div>
+            `;
+        }
+
+        function buyPack(cost) {
+            if (coins >= cost) {
+                coins -= cost; updateCoinsUI();
+                // Genera un giocatore casuale
+                const randomName = "PLAYER " + Math.floor(Math.random() * 1000);
+                const randomOvr = Math.floor(Math.random() * (99 - 70 + 1)) + 70;
+                myTeam.push({ name: randomName, ovr: randomOvr, pos: "CEN" });
+                alert(`Hai trovato ${randomName} (${randomOvr} OVR)!`);
+            } else {
+                alert("Monete insufficienti!");
             }
         }
 
         // ==========================================
-        // 3. MOTORE FISICO E GIOCO (Versione Veloce)
+        // 3. MOTORE FISICO E GIOCO (IA SENSATA)
         // ==========================================
         class Vector2 {
             constructor(x = 0, y = 0) { this.x = x; this.y = y; }
             add(v) { this.x += v.x; this.y += v.y; return this; }
+            sub(v) { this.x -= v.x; this.y -= v.y; return this; }
             mult(n) { this.x *= n; this.y *= n; return this; }
             div(n) { this.x /= n; this.y /= n; return this; }
             mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
             norm() { let m = this.mag(); if (m !== 0) { this.div(m); } return this; }
-            dist(v) { let dx = this.x - v.x; let dy = this.y - v.y; return Math.sqrt(dx * dx + dy * dy); }
-            static dist(v1, v2) { let dx = v1.x - v2.x; let dy = v1.y - v2.y; return Math.sqrt(dx * dx + dy * dy); }
+            dist(v) { return Math.hypot(this.x - v.x, this.y - v.y); }
+            static dist(v1, v2) { return Math.hypot(v1.x - v2.x, v1.y - v2.y); }
             clone() { return new Vector2(this.x, this.y); }
         }
 
@@ -285,25 +308,23 @@
         let lastTimestamp = 0;
         let goalCooldown = 0;
         
-        const SIMULATION_SPEED = 3.0;
-        const PLAYER_FORCE = 2.5;
+        // VELOCITÀ NORMALE E FORZA REALISTICA
+        const SIMULATION_SPEED = 1.0; 
+        const PLAYER_FORCE = 0.8; 
         const PLAYER_FRICTION = 0.88;
         const BALL_FRICTION = 0.97;
 
         class Entity {
             constructor(x, y, radius, mass, color) {
-                this.pos = new Vector2(x, y);
-                this.vel = new Vector2(0, 0);
-                this.acc = new Vector2(0, 0);
+                this.pos = new Vector2(x, y); this.vel = new Vector2(0, 0); this.acc = new Vector2(0, 0);
                 this.radius = radius; this.mass = mass; this.color = color;
-                this.friction = PLAYER_FRICTION; this.restitution = 0.6;
+                this.friction = PLAYER_FRICTION; this.restitution = 0.5;
             }
             applyForce(force) { this.acc.add(force); }
             update(dt) {
-                if (dt > 0.1) dt = 0.1;
                 this.vel.add(this.acc);
-                this.pos.x += this.vel.x * dt * 60 * SIMULATION_SPEED;
-                this.pos.y += this.vel.y * dt * 60 * SIMULATION_SPEED;
+                this.pos.x += this.vel.x * dt * 60;
+                this.pos.y += this.vel.y * dt * 60;
                 this.vel.mult(this.friction);
                 this.acc.mult(0);
                 if (this.pos.x - this.radius < 0) { this.pos.x = this.radius; this.vel.x *= -this.restitution; }
@@ -313,48 +334,113 @@
             }
             draw(ctx) {
                 ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; ctx.fill();
-                ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.closePath(); ctx.shadowBlur = 0;
+                ctx.fillStyle = this.color; ctx.fill(); ctx.closePath();
             }
         }
 
         class Ball extends Entity {
-            constructor(x, y) { super(x, y, 8, 0.5, '#ffffff'); this.friction = BALL_FRICTION; this.restitution = 0.8; }
+            constructor(x, y) { super(x, y, 8, 0.5, '#ffffff'); this.friction = BALL_FRICTION; this.restitution = 0.8; this.lastTouch = null; }
             reset() { this.pos = new Vector2(FIELD_WIDTH / 2, FIELD_HEIGHT / 2); this.vel = new Vector2(0, 0); this.acc = new Vector2(0, 0); }
-            draw(ctx) { super.draw(ctx); ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius * 0.4, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill(); ctx.closePath(); }
+            draw(ctx) {
+                super.draw(ctx);
+                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#000'; ctx.fill(); ctx.closePath();
+            }
         }
 
         class Player extends Entity {
             constructor(x, y, teamColor, role, isHome) {
-                super(x, y, 12, 1, teamColor);
-                this.role = role; this.basePos = new Vector2(x, y); this.isHome = isHome;
-                this.speed = PLAYER_FORCE;
+                super(x, y, 14, 1, teamColor);
+                this.role = role; 
+                this.basePos = new Vector2(x, y); 
+                this.isHome = isHome;
             }
-            updateAI(ball, dt) {
+
+            updateAI(ball, allPlayers, dt) {
                 let distToBall = Vector2.dist(this.pos, ball.pos);
-                let target = new Vector2(this.basePos.x, this.basePos.y);
-                
-                let ballInOpponentHalf = this.isHome ? ball.pos.x > FIELD_WIDTH / 2 : ball.pos.x < FIELD_WIDTH / 2;
-                
+                let target = this.basePos.clone();
+                let action = 'IDLE';
+
+                // 1. PORTIERE
                 if (this.role === 'POR') {
-                    target.y = Math.max(FIELD_HEIGHT/2 - 80, Math.min(FIELD_HEIGHT/2 + 80, ball.pos.y));
-                    if (distToBall < 150) target.x = ball.pos.x;
-                } else {
-                    if (distToBall < 250) {
-                        target = ball.pos;
+                    target.y = Math.max(FIELD_HEIGHT/2 - 60, Math.min(FIELD_HEIGHT/2 + 60, ball.pos.y));
+                    if (distToBall < 120) target.x = ball.pos.x; // Esce se necessario
+                } 
+                // 2. GIOCATORI DI MOVIMENTO
+                else {
+                    let isClosestToBall = true;
+                    // Controlla se un altro compagno è più vicino
+                    for (let p of allPlayers) {
+                        if (p !== this && p.isHome === this.isHome && p.role !== 'POR') {
+                            if (Vector2.dist(p.pos, ball.pos) < distToBall) {
+                                isClosestToBall = false; break;
+                            }
+                        }
+                    }
+
+                    if (isClosestToBall) {
+                        // LOGICA DI ATTACCO: Corri verso la palla
+                        if (distToBall < 250 || (this.isHome && ball.pos.x > 300) || (!this.isHome && ball.pos.x < 700)) {
+                            target = ball.pos.clone();
+                            
+                            // Se sei vicinissimo, prendi decisioni
+                            if (distToBall < this.radius + ball.radius + 10) {
+                                // Sei in zona tiro?
+                                let inShootingZone = this.isHome ? (ball.pos.x > 700) : (ball.pos.x < 300);
+                                
+                                if (inShootingZone) {
+                                    // TIRA
+                                    let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.3).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.3).norm();
+                                    ball.applyForce(shootDir.mult(25));
+                                    ball.lastTouch = this;
+                                } else {
+                                    // PASSA al compagno più avanti
+                                    let bestPassTarget = null;
+                                    let bestDistance = -1;
+                                    
+                                    for (let p of allPlayers) {
+                                        if (p !== this && p.isHome === this.isHome && p.role !== 'POR') {
+                                            let advance = this.isHome ? (p.pos.x - this.pos.x) : (this.pos.x - p.pos.x);
+                                            if (advance > 0 && advance > bestDistance) {
+                                                bestDistance = advance;
+                                                bestPassTarget = p;
+                                            }
+                                        }
+                                    }
+
+                                    if (bestPassTarget) {
+                                        let passDir = new Vector2(bestPassTarget.pos.x - ball.pos.x, bestPassTarget.pos.y - ball.pos.y).norm();
+                                        ball.applyForce(passDir.mult(15)); // Forza di passaggio
+                                        ball.lastTouch = this;
+                                    } else {
+                                        // Se non può passare, tira in porta
+                                        let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.5).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.5).norm();
+                                        ball.applyForce(shootDir.mult(20));
+                                        ball.lastTouch = this;
+                                    }
+                                }
+                            }
+                        } else {
+                            // Non sei vicino alla palla, mantieni la posizione tattica
+                            let ballInOpponentHalf = this.isHome ? ball.pos.x > FIELD_WIDTH / 2 : ball.pos.x < FIELD_WIDTH / 2;
+                            let offsetX = ballInOpponentHalf ? 150 : -50;
+                            target.x = this.basePos.x + offsetX;
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3;
+                        }
                     } else {
-                        let offsetX = ballInOpponentHalf ? 150 : -50;
-                        target.x = this.basePos.x + offsetX;
-                        target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.5;
+                        // Non sei il più vicino, mantieni posizione difensiva
+                        if (this.isHome) {
+                            target.x = Math.min(this.basePos.x, ball.pos.x - 100);
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.2;
+                        } else {
+                            target.x = Math.max(this.basePos.x, ball.pos.x + 100);
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.2;
+                        }
                     }
                 }
+
                 let dir = new Vector2(target.x - this.pos.x, target.y - this.pos.y).norm();
-                this.applyForce(dir.mult(this.speed));
-                
-                if (distToBall < this.radius + ball.radius + 15) {
-                    let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.8).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.8).norm();
-                    ball.applyForce(shootDir.mult(20));
-                }
+                this.applyForce(dir.mult(PLAYER_FORCE));
             }
         }
 
@@ -383,30 +469,45 @@
         function initGame() {
             ball = new Ball(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
             players = [];
-            // ECLIPSE FC (Casa)
-            players.push(new Player(FIELD_WIDTH / 3, FIELD_HEIGHT / 2, '#e63946', 'CEN', true));
-            players.push(new Player(FIELD_WIDTH / 4, FIELD_HEIGHT / 3, '#e63946', 'DIF', true));
-            players.push(new Player(FIELD_WIDTH / 4, FIELD_HEIGHT / 1.5, '#e63946', 'DIF', true));
-            players.push(new Player(FIELD_WIDTH / 1.5, FIELD_HEIGHT / 2, '#e63946', 'ATT', true));
+            
+            // ECLIPSE FC (Casa - Sinistra)
             players.push(new Player(50, FIELD_HEIGHT / 2, '#e63946', 'POR', true));
-            // NEON TIGERS (Ospiti)
+            players.push(new Player(200, FIELD_HEIGHT / 4, '#e63946', 'DIF', true));
+            players.push(new Player(200, FIELD_HEIGHT / 2, '#e63946', 'DIF', true));
+            players.push(new Player(200, FIELD_HEIGHT * 0.75, '#e63946', 'DIF', true));
+            players.push(new Player(400, FIELD_HEIGHT / 3, '#e63946', 'CEN', true));
+            players.push(new Player(400, FIELD_HEIGHT * 0.66, '#e63946', 'CEN', true));
+            players.push(new Player(600, FIELD_HEIGHT / 2, '#e63946', 'ATT', true));
+
+            // NEON TIGERS (Ospiti - Destra)
             players.push(new Player(FIELD_WIDTH - 50, FIELD_HEIGHT / 2, '#00b894', 'POR', false));
-            players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 3, '#00b894', 'DIF', false));
-            players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 1.5, '#00b894', 'DIF', false));
-            players.push(new Player(FIELD_WIDTH * 0.6, FIELD_HEIGHT / 2, '#00b894', 'CEN', false));
-            players.push(new Player(FIELD_WIDTH * 0.8, FIELD_HEIGHT / 2, '#00b894', 'ATT', false));
+            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT / 4, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT / 2, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT * 0.75, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH - 400, FIELD_HEIGHT / 3, '#00b894', 'CEN', false));
+            players.push(new Player(FIELD_WIDTH - 400, FIELD_HEIGHT * 0.66, '#00b894', 'CEN', false));
+            players.push(new Player(FIELD_WIDTH - 600, FIELD_HEIGHT / 2, '#00b894', 'ATT', false));
 
             scoreHome = 0; scoreAway = 0; matchTime = 90;
             document.getElementById('score-home').innerText = "0"; document.getElementById('score-away').innerText = "0";
         }
 
         function drawField(ctx) {
-            ctx.fillStyle = '#1a2f1a'; ctx.fillRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 80, 0, Math.PI * 2); ctx.stroke();
+            // Erba a strisce
+            for(let i=0; i<10; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#1a3a1a' : '#1f421f';
+                ctx.fillRect((FIELD_WIDTH/10)*i, 0, FIELD_WIDTH/10, FIELD_HEIGHT);
+            }
+            // Linee
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(FIELD_WIDTH / 2, 0); ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT); ctx.stroke();
-            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 100, 120, 200); ctx.strokeRect(FIELD_WIDTH - 120, FIELD_HEIGHT / 2 - 100, 120, 200);
-            ctx.fillStyle = '#fff'; ctx.fillRect(0, FIELD_HEIGHT / 2 - 40, 5, 80); ctx.fillRect(FIELD_WIDTH - 5, FIELD_HEIGHT / 2 - 40, 5, 80);
+            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 120, 150, 240); 
+            ctx.strokeRect(FIELD_WIDTH - 150, FIELD_HEIGHT / 2 - 120, 150, 240);
+            // Porte
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, FIELD_HEIGHT / 2 - 40, 8, 80); 
+            ctx.fillRect(FIELD_WIDTH - 8, FIELD_HEIGHT / 2 - 40, 8, 80);
         }
 
         function checkGoal() {
@@ -415,16 +516,18 @@
         }
 
         function triggerGoal(team) {
-            GAME_STATE = 'GOAL'; goalCooldown = 1.0;
+            GAME_STATE = 'GOAL'; goalCooldown = 2.0; // Pausa più lunga per godersi il goal
             const gt = document.getElementById('goalText'); gt.innerText = `GOAL! ${team}`; gt.style.display = 'block';
             document.getElementById('score-home').innerText = scoreHome; document.getElementById('score-away').innerText = scoreAway;
         }
 
         function gameLoop(timestamp) {
-            let dt = (timestamp - lastTimestamp) / 1000; lastTimestamp = timestamp;
+            let dt = (timestamp - lastTimestamp) / 1000; 
+            if (dt > 0.1) dt = 0.1;
+            lastTimestamp = timestamp;
 
             if (GAME_STATE === 'PLAYING') {
-                matchTime -= dt * SIMULATION_SPEED;
+                matchTime -= dt;
                 if (matchTime <= 0) {
                     matchTime = 0; GAME_STATE = 'GAMEOVER';
                     document.getElementById('finalScore').innerText = `${scoreHome} - ${scoreAway}`;
@@ -433,8 +536,10 @@
                 let min = Math.floor(matchTime / 60); let sec = Math.floor(matchTime % 60);
                 document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 
-                players.forEach(p => p.updateAI(ball, dt));
-                ball.update(dt); players.forEach(p => p.update(dt));
+                players.forEach(p => p.updateAI(ball, players, dt));
+                ball.update(dt); 
+                players.forEach(p => p.update(dt));
+                
                 players.forEach(p => resolveCollision(p, ball));
                 for (let i = 0; i < players.length; i++) {
                     for (let j = i + 1; j < players.length; j++) { resolveCollision(players[i], players[j]); }
@@ -449,12 +554,15 @@
                 }
             }
 
-            drawField(CTX); ball.draw(CTX); players.forEach(p => p.draw(CTX));
+            drawField(CTX); 
+            ball.draw(CTX); 
+            players.forEach(p => p.draw(CTX));
+            
             if (GAME_STATE !== 'MENU') requestAnimationFrame(gameLoop);
         }
 
-        function startSimulation() {
-            document.getElementById('mainMenu').classList.add('hidden');
+        function startMatch() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('hud').classList.remove('hidden');
             CANVAS.style.display = 'block';
             
