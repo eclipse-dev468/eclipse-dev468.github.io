@@ -126,7 +126,7 @@
 
         <!-- 2. SCHERMATA SQUADRA -->
         <div id="teamScreen" class="screen hidden">
-            <h2>LA TUA SQUADRA</h2>
+            <h2>ECLIPSE FC - ROSA</h2>
             <div class="list-container" id="teamList">
                 <!-- Lista generata da JS -->
             </div>
@@ -135,7 +135,7 @@
 
         <!-- 3. SCHERMATA NEGOZIO -->
         <div id="shopScreen" class="screen hidden">
-            <h2>NEGOZIO</h2>
+            <h2>MERCATO GIOCATORI</h2>
             <div class="list-container" id="shopList">
                 <!-- Lista generata da JS -->
             </div>
@@ -145,9 +145,9 @@
         <!-- 4. PARTITA E HUD -->
         <div id="hud" class="hidden">
             <div class="scoreboard">
-                <div class="team-name">SFIDA CUGINI</div>
+                <div class="team-name">ECLIPSE FC</div>
                 <div id="score-home">0</div> - <div id="score-away">0</div>
-                <div class="team-name">FC STARS</div>
+                <div class="team-name">NEON TIGERS</div>
                 <div style="margin-left: 20px; border-left: 1px solid #444; padding-left: 20px;">
                     <span id="timer">01:30</span>
                 </div>
@@ -170,22 +170,22 @@
         // ==========================================
         let coins = 1000;
         
-        // Il tuo team (iniziale)
+        // ECLIPSE FC (Nomi completamente inventati)
         let myTeam = [
-            { name: "ANDREA CUSANNO", ovr: 114, pos: "ATT" },
-            { name: "ALBERTO CARRIERI", ovr: 116, pos: "ATT" },
-            { name: "J. SMITH", ovr: 65, pos: "POR" },
-            { name: "T. MÜLLER", ovr: 68, pos: "DIF" },
-            { name: "D. SILVA", ovr: 67, pos: "DIF" }
+            { name: "L. VANCE", ovr: 114, pos: "ATT" },
+            { name: "K. RYDER", ovr: 116, pos: "ATT" },
+            { name: "M. KANE", ovr: 65, pos: "POR" },
+            { name: "D. ROCKS", ovr: 68, pos: "DIF" },
+            { name: "S. BLADE", ovr: 67, pos: "DIF" }
         ];
 
-        // Giocatori in vendita
+        // Mercato (Nomi inventati)
         let shopData = [
-            { name: "C. ROLANDO", ovr: 99, price: 800 },
-            { name: "L. MESSINI", ovr: 98, price: 700 },
-            { name: "R. LOKAKO", ovr: 97, price: 600 },
-            { name: "K. MBAPPE", ovr: 96, price: 550 },
-            { name: "V. OSHIMEN", ovr: 95, price: 520 }
+            { name: "C. VELTRO", ovr: 99, price: 800 },
+            { name: "L. ASTRO", ovr: 98, price: 700 },
+            { name: "R. TITANO", ovr: 97, price: 600 },
+            { name: "K. FULMINE", ovr: 96, price: 550 },
+            { name: "V. FALCO", ovr: 95, price: 520 }
         ];
 
         function updateCoinsUI() {
@@ -209,7 +209,6 @@
             const container = document.getElementById('teamList');
             container.innerHTML = '';
             
-            // Ordina per OVR
             myTeam.sort((a,b) => b.ovr - a.ovr).forEach(p => {
                 container.innerHTML += `
                     <div class="item-row">
@@ -252,8 +251,8 @@
             const player = shopData[index];
             if (coins >= player.price) {
                 coins -= player.price;
-                myTeam.push({ name: player.name, ovr: player.ovr, pos: "CEN" }); // Aggiungi al team
-                shopData.splice(index, 1); // Rimuovi dal negozio
+                myTeam.push({ name: player.name, ovr: player.ovr, pos: "CEN" });
+                shopData.splice(index, 1);
                 updateCoinsUI();
                 renderShop();
                 alert(`Hai acquistato ${player.name}!`);
@@ -286,10 +285,9 @@
         let lastTimestamp = 0;
         let goalCooldown = 0;
         
-        // --- TUNING FISICA (Qui è dove ho velocizzato tutto!) ---
-        const SIMULATION_SPEED = 3.0; // Gioco 3x più veloce
-        const PLAYER_FORCE = 2.5; // Spinta molto più forte
-        const PLAYER_FRICTION = 0.88; // Meno attrito, scivolano di più
+        const SIMULATION_SPEED = 3.0;
+        const PLAYER_FORCE = 2.5;
+        const PLAYER_FRICTION = 0.88;
         const BALL_FRICTION = 0.97;
 
         class Entity {
@@ -300,7 +298,7 @@
                 this.radius = radius; this.mass = mass; this.color = color;
                 this.friction = PLAYER_FRICTION; this.restitution = 0.6;
             }
-            applyForce(force) { this.acc.add(force); } // Ignoriamo la massa per il movimento, così è più reattivo
+            applyForce(force) { this.acc.add(force); }
             update(dt) {
                 if (dt > 0.1) dt = 0.1;
                 this.vel.add(this.acc);
@@ -308,7 +306,6 @@
                 this.pos.y += this.vel.y * dt * 60 * SIMULATION_SPEED;
                 this.vel.mult(this.friction);
                 this.acc.mult(0);
-                // Bordi
                 if (this.pos.x - this.radius < 0) { this.pos.x = this.radius; this.vel.x *= -this.restitution; }
                 if (this.pos.x + this.radius > FIELD_WIDTH) { this.pos.x = FIELD_WIDTH - this.radius; this.vel.x *= -this.restitution; }
                 if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y *= -this.restitution; }
@@ -343,7 +340,7 @@
                     target.y = Math.max(FIELD_HEIGHT/2 - 80, Math.min(FIELD_HEIGHT/2 + 80, ball.pos.y));
                     if (distToBall < 150) target.x = ball.pos.x;
                 } else {
-                    if (distToBall < 250) { // Raggio di inseguimento aumentato
+                    if (distToBall < 250) {
                         target = ball.pos;
                     } else {
                         let offsetX = ballInOpponentHalf ? 150 : -50;
@@ -356,7 +353,7 @@
                 
                 if (distToBall < this.radius + ball.radius + 15) {
                     let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.8).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.8).norm();
-                    ball.applyForce(shootDir.mult(20)); // Tiro più potente
+                    ball.applyForce(shootDir.mult(20));
                 }
             }
         }
@@ -386,13 +383,13 @@
         function initGame() {
             ball = new Ball(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
             players = [];
-            // Casa
+            // ECLIPSE FC (Casa)
             players.push(new Player(FIELD_WIDTH / 3, FIELD_HEIGHT / 2, '#e63946', 'CEN', true));
             players.push(new Player(FIELD_WIDTH / 4, FIELD_HEIGHT / 3, '#e63946', 'DIF', true));
             players.push(new Player(FIELD_WIDTH / 4, FIELD_HEIGHT / 1.5, '#e63946', 'DIF', true));
             players.push(new Player(FIELD_WIDTH / 1.5, FIELD_HEIGHT / 2, '#e63946', 'ATT', true));
             players.push(new Player(50, FIELD_HEIGHT / 2, '#e63946', 'POR', true));
-            // Ospiti
+            // NEON TIGERS (Ospiti)
             players.push(new Player(FIELD_WIDTH - 50, FIELD_HEIGHT / 2, '#00b894', 'POR', false));
             players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 3, '#00b894', 'DIF', false));
             players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 1.5, '#00b894', 'DIF', false));
@@ -413,12 +410,12 @@
         }
 
         function checkGoal() {
-            if (ball.pos.x > FIELD_WIDTH - ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreHome++; triggerGoal("SFIDA CUGINI"); }
-            else if (ball.pos.x < ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreAway++; triggerGoal("FC STARS"); }
+            if (ball.pos.x > FIELD_WIDTH - ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreHome++; triggerGoal("ECLIPSE FC"); }
+            else if (ball.pos.x < ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreAway++; triggerGoal("NEON TIGERS"); }
         }
 
         function triggerGoal(team) {
-            GAME_STATE = 'GOAL'; goalCooldown = 1.0; // Pausa brevissima
+            GAME_STATE = 'GOAL'; goalCooldown = 1.0;
             const gt = document.getElementById('goalText'); gt.innerText = `GOAL! ${team}`; gt.style.display = 'block';
             document.getElementById('score-home').innerText = scoreHome; document.getElementById('score-away').innerText = scoreAway;
         }
