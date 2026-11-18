@@ -13,12 +13,12 @@
             overflow: hidden; color: white; user-select: none;
         }
 
-        /* TOP BAR */
+        /* TOP BAR (Monete FISSE e sempre visibili) */
         #topBar {
             position: absolute; top: 0; left: 0; width: 100%;
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 30px; box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(10,10,15,0.9) 0%, rgba(10,10,15,0) 100%);
+            background: linear-gradient(180deg, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0) 100%);
             z-index: 15;
         }
         .logo { font-size: 1.5em; font-weight: 900; color: #00ff88; text-shadow: 0 0 10px #00ff88; }
@@ -41,7 +41,7 @@
             max-width: 100%; max-height: 100%;
         }
 
-        /* OVERLAY UI (Menù) */
+        /* OVERLAY UI */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 15, 0.95); display: flex; flex-direction: column;
@@ -61,11 +61,11 @@
         .btn-red:hover { background: #e63946; color: #fff; box-shadow: 0 0 30px #e63946; }
 
         h1 { font-size: 4em; margin: 0; color: #00ff88; text-shadow: 0 0 20px #00ff88; }
-        h2 { color: #e63946; margin-bottom: 30px; }
+        h2 { color: #e63946; margin-bottom: 20px; }
 
-        /* LISTE (Negozio/Squadra) */
+        /* LISTE (Negozio/Squadra/Pacchetti) */
         .list-container {
-            width: 80%; max-width: 800px; height: 60vh; overflow-y: auto;
+            width: 80%; max-width: 800px; height: 55vh; overflow-y: auto;
             background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 10px;
             padding: 20px; margin-top: 20px;
         }
@@ -108,7 +108,7 @@
 <body>
 
     <div id="topBar">
-        <div class="logo">ECLIPSE</div>
+        <div class="logo">ECLIPSE FC</div>
         <div class="coins-display">
             <span>🪙</span>
             <span id="coinAmount">1000</span> AC
@@ -118,8 +118,8 @@
     <div id="screenContainer">
         <!-- 1. MENU PRINCIPALE -->
         <div id="mainMenu" class="screen">
-            <h1>ECLIPSE FC</h1>
-            <h2>PRO LEAGUE 2D</h2>
+            <h1>PRO LEAGUE 2D</h1>
+            <h2>IL CALCIO, LA NOSTRA SFIDA</h2>
             <button class="btn" onclick="startMatch()">GIOCA PARTITA</button>
             <button class="btn" onclick="openScreen('teamScreen')">LA TUA SQUADRA</button>
             <button class="btn" onclick="openScreen('shopScreen')">NEGOZIO</button>
@@ -271,7 +271,6 @@
         function buyPack(cost) {
             if (coins >= cost) {
                 coins -= cost; updateCoinsUI();
-                // Genera un giocatore casuale
                 const randomName = "PLAYER " + Math.floor(Math.random() * 1000);
                 const randomOvr = Math.floor(Math.random() * (99 - 70 + 1)) + 70;
                 myTeam.push({ name: randomName, ovr: randomOvr, pos: "CEN" });
@@ -308,11 +307,10 @@
         let lastTimestamp = 0;
         let goalCooldown = 0;
         
-        // VELOCITÀ NORMALE E FORZA REALISTICA
         const SIMULATION_SPEED = 1.0; 
-        const PLAYER_FORCE = 0.8; 
-        const PLAYER_FRICTION = 0.88;
-        const BALL_FRICTION = 0.97;
+        const PLAYER_FORCE = 1.0; 
+        const PLAYER_FRICTION = 0.85;
+        const BALL_FRICTION = 0.96;
 
         class Entity {
             constructor(x, y, radius, mass, color) {
@@ -359,61 +357,41 @@
             updateAI(ball, allPlayers, dt) {
                 let distToBall = Vector2.dist(this.pos, ball.pos);
                 let target = this.basePos.clone();
-                let action = 'IDLE';
 
-                // 1. PORTIERE
                 if (this.role === 'POR') {
                     target.y = Math.max(FIELD_HEIGHT/2 - 60, Math.min(FIELD_HEIGHT/2 + 60, ball.pos.y));
-                    if (distToBall < 120) target.x = ball.pos.x; // Esce se necessario
-                } 
-                // 2. GIOCATORI DI MOVIMENTO
-                else {
+                    if (distToBall < 120) target.x = ball.pos.x;
+                } else {
                     let isClosestToBall = true;
-                    // Controlla se un altro compagno è più vicino
                     for (let p of allPlayers) {
                         if (p !== this && p.isHome === this.isHome && p.role !== 'POR') {
-                            if (Vector2.dist(p.pos, ball.pos) < distToBall) {
-                                isClosestToBall = false; break;
-                            }
+                            if (Vector2.dist(p.pos, ball.pos) < distToBall) { isClosestToBall = false; break; }
                         }
                     }
 
                     if (isClosestToBall) {
-                        // LOGICA DI ATTACCO: Corri verso la palla
                         if (distToBall < 250 || (this.isHome && ball.pos.x > 300) || (!this.isHome && ball.pos.x < 700)) {
                             target = ball.pos.clone();
-                            
-                            // Se sei vicinissimo, prendi decisioni
                             if (distToBall < this.radius + ball.radius + 10) {
-                                // Sei in zona tiro?
                                 let inShootingZone = this.isHome ? (ball.pos.x > 700) : (ball.pos.x < 300);
-                                
                                 if (inShootingZone) {
-                                    // TIRA
                                     let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.3).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.3).norm();
                                     ball.applyForce(shootDir.mult(25));
                                     ball.lastTouch = this;
                                 } else {
-                                    // PASSA al compagno più avanti
                                     let bestPassTarget = null;
                                     let bestDistance = -1;
-                                    
                                     for (let p of allPlayers) {
                                         if (p !== this && p.isHome === this.isHome && p.role !== 'POR') {
                                             let advance = this.isHome ? (p.pos.x - this.pos.x) : (this.pos.x - p.pos.x);
-                                            if (advance > 0 && advance > bestDistance) {
-                                                bestDistance = advance;
-                                                bestPassTarget = p;
-                                            }
+                                            if (advance > 0 && advance > bestDistance) { bestDistance = advance; bestPassTarget = p; }
                                         }
                                     }
-
                                     if (bestPassTarget) {
                                         let passDir = new Vector2(bestPassTarget.pos.x - ball.pos.x, bestPassTarget.pos.y - ball.pos.y).norm();
-                                        ball.applyForce(passDir.mult(15)); // Forza di passaggio
+                                        ball.applyForce(passDir.mult(15));
                                         ball.lastTouch = this;
                                     } else {
-                                        // Se non può passare, tira in porta
                                         let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.5).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.5).norm();
                                         ball.applyForce(shootDir.mult(20));
                                         ball.lastTouch = this;
@@ -421,14 +399,12 @@
                                 }
                             }
                         } else {
-                            // Non sei vicino alla palla, mantieni la posizione tattica
                             let ballInOpponentHalf = this.isHome ? ball.pos.x > FIELD_WIDTH / 2 : ball.pos.x < FIELD_WIDTH / 2;
                             let offsetX = ballInOpponentHalf ? 150 : -50;
                             target.x = this.basePos.x + offsetX;
                             target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3;
                         }
                     } else {
-                        // Non sei il più vicino, mantieni posizione difensiva
                         if (this.isHome) {
                             target.x = Math.min(this.basePos.x, ball.pos.x - 100);
                             target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.2;
@@ -469,7 +445,6 @@
         function initGame() {
             ball = new Ball(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
             players = [];
-            
             // ECLIPSE FC (Casa - Sinistra)
             players.push(new Player(50, FIELD_HEIGHT / 2, '#e63946', 'POR', true));
             players.push(new Player(200, FIELD_HEIGHT / 4, '#e63946', 'DIF', true));
@@ -493,18 +468,15 @@
         }
 
         function drawField(ctx) {
-            // Erba a strisce
             for(let i=0; i<10; i++) {
                 ctx.fillStyle = i % 2 === 0 ? '#1a3a1a' : '#1f421f';
                 ctx.fillRect((FIELD_WIDTH/10)*i, 0, FIELD_WIDTH/10, FIELD_HEIGHT);
             }
-            // Linee
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(FIELD_WIDTH / 2, 0); ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT); ctx.stroke();
             ctx.strokeRect(0, FIELD_HEIGHT / 2 - 120, 150, 240); 
             ctx.strokeRect(FIELD_WIDTH - 150, FIELD_HEIGHT / 2 - 120, 150, 240);
-            // Porte
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.fillRect(0, FIELD_HEIGHT / 2 - 40, 8, 80); 
             ctx.fillRect(FIELD_WIDTH - 8, FIELD_HEIGHT / 2 - 40, 8, 80);
@@ -516,7 +488,7 @@
         }
 
         function triggerGoal(team) {
-            GAME_STATE = 'GOAL'; goalCooldown = 2.0; // Pausa più lunga per godersi il goal
+            GAME_STATE = 'GOAL'; goalCooldown = 2.0;
             const gt = document.getElementById('goalText'); gt.innerText = `GOAL! ${team}`; gt.style.display = 'block';
             document.getElementById('score-home').innerText = scoreHome; document.getElementById('score-away').innerText = scoreAway;
         }
