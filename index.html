@@ -3,286 +3,696 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECLIPSE: PRO LEAGUE 2D</title>
+    <title>ECLIPSE PRO LEAGUE 2D</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #0a0a0f; font-family: 'Orbitron', sans-serif;
-            overflow: hidden; color: white; user-select: none;
-        }
-
-        /* TOP BAR (Monete FISSE e sempre visibili) */
-        #topBar {
-            position: absolute; top: 0; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 30px; box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0) 100%);
-            z-index: 15;
-        }
-        .logo { font-size: 1.5em; font-weight: 900; color: #00ff88; text-shadow: 0 0 10px #00ff88; }
-        .coins-display {
-            background: rgba(0, 0, 0, 0.8); border: 1px solid #ffd700;
-            padding: 8px 15px; border-radius: 8px; font-size: 1.2em; color: #ffd700;
-            display: flex; align-items: center; gap: 10px; box-shadow: 0 0 10px rgba(255,215,0,0.3);
+        :root {
+            --primary: #00ff88;
+            --secondary: #e63946;
+            --dark: #0a0a0f;
+            --card-bg: #151a26;
+            --text-main: #ffffff;
+            --text-muted: #718096;
+            --gold: #ffd700;
+            --font-main: 'Montserrat', sans-serif;
         }
 
-        /* LAYOUT E CANVAS */
-        #screenContainer {
-            position: relative; width: 100vw; height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-        }
-        canvas { 
-            background-color: #1a2f1a; 
-            box-shadow: 0 0 50px rgba(0, 255, 136, 0.1); 
-            border-radius: 10px; 
-            display: none; 
-            max-width: 100%; max-height: 100%;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
         }
 
-        /* OVERLAY UI */
-        .screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 15, 0.95); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 10; transition: opacity 0.3s;
+        body {
+            background-color: var(--dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .hidden { display: none !important; }
 
-        /* BOTTONI */
-        .btn {
-            background: transparent; color: #00ff88; border: 2px solid #00ff88;
-            padding: 15px 40px; font-size: 1.2em; font-family: 'Orbitron', sans-serif;
-            cursor: pointer; border-radius: 8px; transition: all 0.2s;
-            text-transform: uppercase; font-weight: bold; margin: 10px; width: 320px;
+        /* ================= ANIMAZIONI ================= */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .btn:hover { background: #00ff88; color: #0a0a0f; box-shadow: 0 0 30px #00ff88; transform: scale(1.05); }
-        .btn-red { color: #e63946; border-color: #e63946; }
-        .btn-red:hover { background: #e63946; color: #fff; box-shadow: 0 0 30px #e63946; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes goalFlash {
+            0% { background-color: rgba(0, 255, 136, 0.8); }
+            100% { background-color: transparent; }
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
 
-        h1 { font-size: 4em; margin: 0; color: #00ff88; text-shadow: 0 0 20px #00ff88; }
-        h2 { color: #e63946; margin-bottom: 20px; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
-        /* LISTE (Negozio/Squadra/Pacchetti) */
-        .list-container {
-            width: 80%; max-width: 800px; height: 55vh; overflow-y: auto;
-            background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 10px;
-            padding: 20px; margin-top: 20px;
+        /* ================= HEADER ================= */
+        header {
+            background: linear-gradient(90deg, #111827, #1f2937);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.1);
+            z-index: 100;
         }
-        .item-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-bottom: 1px solid #333; transition: background 0.2s;
-        }
-        .item-row:hover { background: rgba(255,255,255,0.05); }
-        .item-name { font-size: 1.2em; font-weight: bold; }
-        .item-ovr { color: #00ff88; font-size: 1.5em; }
-        .item-btn {
-            background: #e63946; color: white; border: none; padding: 8px 15px;
-            border-radius: 5px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-weight: bold;
-        }
-        .item-btn:disabled { background: #555; cursor: not-allowed; }
 
-        /* HUD PARTITA */
-        #hud { position: absolute; top: 70px; width: 100%; display: flex; justify-content: center; z-index: 5; pointer-events: none; }
-        .scoreboard {
-            background: rgba(0, 0, 0, 0.85); border: 2px solid #e63946; border-radius: 10px;
-            padding: 10px 30px; display: flex; align-items: center; gap: 20px;
-            font-size: 2em; font-weight: 900; box-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+        .brand {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
-        .team-name { color: #fff; font-size: 0.6em; letter-spacing: 2px; }
-        #timer { color: #00ff88; font-size: 1.2em; }
 
-        /* EFFETTO GOAL */
-        .goal-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 6em; color: #00ff88; text-shadow: 0 0 40px #00ff88;
-            font-weight: 900; z-index: 20; display: none; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
         }
-        @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        /* RISULTATO */
-        #resultScreen { text-align: center; }
-        .final-score { font-size: 5em; color: #fff; margin: 20px 0; text-shadow: 0 0 20px #fff; }
+        .coin-box {
+            background: #1f2535;
+            padding: 8px 18px;
+            border-radius: 25px;
+            color: var(--gold);
+            font-weight: 800;
+            font-size: 16px;
+            border: 1px solid var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+
+        /* ================= NAVIGAZIONE ================= */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .page {
+            display: none;
+            padding: 25px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+            padding-left: 15px;
+            color: var(--primary);
+        }
+
+        /* ================= CARD GIOCATORI ================= */
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .player-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--primary);
+        }
+
+        .player-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .player-ovr {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .player-pos {
+            font-size: 12px;
+            font-weight: 800;
+            background: #374151;
+            color: #d1d5db;
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+
+        .player-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f3f4f6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-price {
+            color: var(--gold);
+            font-size: 14px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .buy-btn {
+            background: var(--primary);
+            color: var(--dark);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+            font-family: var(--font-main);
+        }
+
+        .buy-btn:hover {
+            background: #00cc6a;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .buy-btn:disabled {
+            background: #4b5563;
+            color: #9ca3af;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        /* ================= BOTTONI AZIONE ================= */
+        .btn-action {
+            background: linear-gradient(90deg, #00ff88, #00b894);
+            color: var(--dark);
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            width: 100%;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 30px;
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+            transition: all 0.3s;
+            font-family: var(--font-main);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 255, 136, 0.4);
+        }
+
+        /* ================= BARRA INFERIORE ================= */
+        nav {
+            background: #151a26;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #2d3748;
+            z-index: 100;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: var(--font-main);
+        }
+
+        nav button.active {
+            color: var(--primary);
+        }
+
+        nav button i {
+            font-size: 24px;
+            font-style: normal;
+        }
+
+        /* ================= SCHERMATA PARTITA ================= */
+        #matchScreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 200;
+            flex-direction: column;
+        }
+
+        #matchScreen.active {
+            display: flex;
+        }
+
+        .match-hud {
+            position: absolute;
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 15, 0.9);
+            border: 2px solid var(--primary);
+            padding: 10px 30px;
+            border-radius: 12px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            font-weight: 900;
+            font-size: 22px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+            z-index: 210;
+        }
+
+        .hud-timer {
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #1a3a1a;
+        }
+
+        .commentary-box {
+            position: absolute;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            width: 90%; max-width: 800px;
+            background: rgba(10, 10, 15, 0.95);
+            border-left: 6px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            height: 100px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 210;
+        }
+
+        .commentary-box p {
+            margin-bottom: 6px;
+            color: #d1d5db;
+            line-height: 1.4;
+        }
+
+        .goal-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: 0 0 50px var(--primary);
+            display: none;
+            z-index: 300;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .stats-overlay {
+            position: absolute;
+            top: 80px; left: 20px;
+            background: rgba(10, 10, 15, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #374151;
+            color: #d1d5db;
+            font-size: 13px;
+            z-index: 210;
+            min-width: 150px;
+        }
+
+        .stats-overlay h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 14px;
+            border-bottom: 1px solid #374151;
+            padding-bottom: 5px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .stat-val {
+            font-weight: 800;
+            color: #fff;
+        }
+
+        /* ================= TATTICHE ================= */
+        .tactics-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .tactic-btn {
+            background: #1f2937;
+            color: #9ca3af;
+            border: 1px solid #374151;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.2s;
+            font-family: var(--font-main);
+        }
+
+        .tactic-btn.active {
+            background: var(--primary);
+            color: var(--dark);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        /* ================= FINE PARTITA ================= */
+        #resultScreen {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 15, 0.95);
+            border: 3px solid var(--primary);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 400;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
+        }
+
+        #resultScreen h1 {
+            font-size: 40px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        #finalScore {
+            font-size: 70px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        .replay-btn {
+            background: var(--primary);
+            color: var(--dark);
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: 900;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: var(--font-main);
+        }
+
+        .replay-btn:hover {
+            transform: scale(1.05);
+            animation: pulse 0.5s infinite alternate;
+        }
+
     </style>
 </head>
 <body>
 
-    <div id="topBar">
-        <div class="logo">ECLIPSE FC</div>
-        <div class="coins-display">
-            <span>🪙</span>
-            <span id="coinAmount">1000</span> AC
-        </div>
-    </div>
-
-    <div id="screenContainer">
-        <!-- 1. MENU PRINCIPALE -->
-        <div id="mainMenu" class="screen">
-            <h1>PRO LEAGUE 2D</h1>
-            <h2>IL CALCIO, LA NOSTRA SFIDA</h2>
-            <button class="btn" onclick="startMatch()">GIOCA PARTITA</button>
-            <button class="btn" onclick="openScreen('teamScreen')">LA TUA SQUADRA</button>
-            <button class="btn" onclick="openScreen('shopScreen')">NEGOZIO</button>
-            <button class="btn" onclick="openScreen('packScreen')">PACCHETTI</button>
-        </div>
-
-        <!-- 2. SQUADRA -->
-        <div id="teamScreen" class="screen hidden">
-            <h2>ECLIPSE FC - ROSA</h2>
-            <div class="list-container" id="teamList"></div>
-            <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
-        </div>
-
-        <!-- 3. NEGOZIO -->
-        <div id="shopScreen" class="screen hidden">
-            <h2>MERCATO GIOCATORI</h2>
-            <div class="list-container" id="shopList"></div>
-            <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
-        </div>
-
-        <!-- 4. PACCHETTI -->
-        <div id="packScreen" class="screen hidden">
-            <h2>APRI PACCHETTI</h2>
-            <div class="list-container" id="packList" style="height: 40vh;"></div>
-            <button class="btn btn-red" onclick="backToMenu()" style="margin-top: 20px;">INDIETRO</button>
-        </div>
-
-        <!-- 5. PARTITA E HUD -->
-        <div id="hud" class="hidden">
-            <div class="scoreboard">
-                <div class="team-name">ECLIPSE FC</div>
-                <div id="score-home">0</div> - <div id="score-away">0</div>
-                <div class="team-name">NEON TIGERS</div>
-                <div style="margin-left: 20px; border-left: 1px solid #444; padding-left: 20px;">
-                    <span id="timer">01:30</span>
-                </div>
+    <!-- HEADER -->
+    <header>
+        <div class="brand">ECLIPSE FC</div>
+        <div class="header-stats">
+            <div class="coin-box">
+                <span>🪙</span>
+                <span id="coinAmount">1000</span>
             </div>
         </div>
-        <div id="goalText" class="goal-text">GOAL!</div>
-        <canvas id="gameCanvas"></canvas>
+    </header>
 
-        <!-- 6. FINE PARTITA -->
-        <div id="resultScreen" class="screen hidden">
-            <h2>FINE PARTITA</h2>
-            <div class="final-score" id="finalScore">0 - 0</div>
-            <button class="btn" onclick="location.reload()">TORNA AL MENU</button>
+    <!-- PAGINE -->
+    <main>
+        <!-- HOME -->
+        <div id="page-home" class="page active">
+            <h2 class="section-title">LA MIA SQUADRA</h2>
+            <div class="tactics-bar" id="tacticsBar">
+                <button class="tactic-btn active" onclick="setTactic('BALANCED')">Bilanciato</button>
+                <button class="tactic-btn" onclick="setTactic('ATTACK')">Offensivo</button>
+                <button class="tactic-btn" onclick="setTactic('DEFEND')">Difensivo</button>
+            </div>
+            <div class="player-grid" id="myTeamGrid"></div>
+            <button class="btn-action" onclick="startMatch()">SIMULA PARTITA</button>
+        </div>
+
+        <!-- NEGOZIO -->
+        <div id="page-shop" class="page">
+            <h2 class="section-title">MERCATO GIOCATORI</h2>
+            <div class="player-grid" id="shopGrid"></div>
+        </div>
+
+        <!-- ALTRO -->
+        <div id="page-other" class="page">
+            <h2 class="section-title">IMPOSTAZIONI E INFO</h2>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid #374151;">
+                <p style="color: #9ca3af; margin-bottom: 10px;">Benvenuto in ECLIPSE PRO LEAGUE.</p>
+                <p style="color: #9ca3af; margin-bottom: 10px;">Sviluppato al 100% in JavaScript puro senza librerie esterne.</p>
+                <p style="color: #9ca3af;">Motore fisico, Intelligenza Artificiale e Audio generati in tempo reale.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- NAVIGAZIONE -->
+    <nav>
+        <button onclick="navTo('home')" class="active" id="nav-home"><i>🏠</i>Home</button>
+        <button onclick="navTo('shop')" id="nav-shop"><i>🛒</i>Shop</button>
+        <button onclick="navTo('other')" id="nav-other"><i>⚙️</i>Altro</button>
+    </nav>
+
+    <!-- SCHERMATA PARTITA -->
+    <div id="matchScreen">
+        <div class="match-hud">
+            <span style="color: var(--secondary);">ECLIPSE FC</span>
+            <span id="matchScore">0 - 0</span>
+            <span style="color: #00b894;">IRON WOLVES</span>
+            <span class="hud-timer" id="matchTimer">00:00</span>
+        </div>
+        
+        <div class="stats-overlay" id="statsOverlay">
+            <h4>STATISTICHE</h4>
+            <div class="stat-row"><span>Possesso:</span> <span class="stat-val" id="statPoss">50%</span></div>
+            <div class="stat-row"><span>Tiri:</span> <span class="stat-val" id="statShots">0</span></div>
+            <div class="stat-row"><span>Passaggi:</span> <span class="stat-val" id="statPasses">0</span></div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+        <div class="goal-overlay" id="goalOverlay">GOAL!</div>
+        
+        <div class="commentary-box" id="commentaryBox">
+            <p style="color: var(--primary);">⚽ Benvenuti allo stadio! Inizia la partita.</p>
+        </div>
+
+        <div id="resultScreen">
+            <h1>FINE PARTITA</h1>
+            <div id="finalScore">0 - 0</div>
+            <button class="replay-btn" onclick="closeMatch()">TORNA AL MENU</button>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 1. DATI DI GIOCO (NOMI INVENTATI)
-        // ==========================================
+        // =================================================================
+        // 1. GESTIONE DATI E STATO
+        // =================================================================
         let coins = 1000;
+        let currentTactic = 'BALANCED';
+
+        // Generazione procedurale dei giocatori
+        const firstNames = ["L.", "K.", "M.", "D.", "S.", "J.", "C.", "R.", "V.", "T.", "A.", "P.", "G.", "F.", "B."];
+        const lastNames = ["VANCE", "RYDER", "KANE", "ROCKS", "BLADE", "STORM", "VELTRO", "ASTRO", "TITANO", "FULMINE", "FALCO", "WOLF", "HAWK", "VIPER", "COBRA", "DRAGON", "PHOENIX", "GHOST", "SHADOW", "THUNDER"];
+        const positions = ["ATT", "CEN", "DIF", "POR"];
+
+        let myTeam = [];
+        let shopData = [];
+
+        // Funzione per creare un giocatore casuale
+        function generatePlayer(forceOvr = null, forcePos = null, priceMult = 1) {
+            const name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+            const ovr = forceOvr || Math.floor(Math.random() * (120 - 60 + 1)) + 60;
+            const pos = forcePos || positions[Math.floor(Math.random() * positions.length)];
+            const price = Math.floor((ovr * 10) * priceMult);
+            return { id: Date.now() + Math.random(), name, ovr, pos, price };
+        }
+
+        // Inizializza la squadra con i campioni fissi
+        myTeam.push({ id: 1, name: "L. VANCE", ovr: 114, pos: "ATT", price: 0 });
+        myTeam.push({ id: 2, name: "K. RYDER", ovr: 116, pos: "ATT", price: 0 });
+        myTeam.push({ id: 3, name: "M. KANE", ovr: 75, pos: "POR", price: 0 });
+        myTeam.push({ id: 4, name: "D. ROCKS", ovr: 82, pos: "DIF", price: 0 });
+        myTeam.push({ id: 5, name: "S. BLADE", ovr: 84, pos: "DIF", price: 0 });
+        myTeam.push({ id: 6, name: "J. STORM", ovr: 88, pos: "CEN", price: 0 });
         
-        let myTeam = [
-            { name: "L. VANCE", ovr: 114, pos: "ATT" },
-            { name: "K. RYDER", ovr: 116, pos: "ATT" },
-            { name: "M. KANE", ovr: 65, pos: "POR" },
-            { name: "D. ROCKS", ovr: 68, pos: "DIF" },
-            { name: "S. BLADE", ovr: 67, pos: "DIF" },
-            { name: "J. STORM", ovr: 72, pos: "CEN" }
-        ];
-
-        let shopData = [
-            { name: "C. VELTRO", ovr: 99, price: 800 },
-            { name: "L. ASTRO", ovr: 98, price: 700 },
-            { name: "R. TITANO", ovr: 97, price: 600 },
-            { name: "K. FULMINE", ovr: 96, price: 550 },
-            { name: "V. FALCO", ovr: 95, price: 520 }
-        ];
-
-        function updateCoinsUI() { document.getElementById('coinAmount').innerText = coins; }
-
-        // ==========================================
-        // 2. GESTIONE SCHERMATE UI
-        // ==========================================
-        function backToMenu() {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById('mainMenu').classList.remove('hidden');
+        // Aggiungi altri giocatori per riempire la rosa
+        for (let i = 0; i < 5; i++) {
+            myTeam.push(generatePlayer(Math.floor(Math.random() * (85 - 60 + 1)) + 60));
         }
 
-        function openScreen(id) {
-            document.getElementById('mainMenu').classList.add('hidden');
-            document.getElementById(id).classList.remove('hidden');
-            if(id === 'teamScreen') renderTeam();
-            if(id === 'shopScreen') renderShop();
-            if(id === 'packScreen') renderPacks();
+        // Inizializza il negozio
+        for (let i = 0; i < 12; i++) {
+            shopData.push(generatePlayer(Math.floor(Math.random() * (99 - 80 + 1)) + 80, null, 1.2));
+        }
+        // Aggiungi i campioni fissi al negozio
+        shopData.unshift({ id: 101, name: "C. VELTRO", ovr: 99, pos: "ATT", price: 800 });
+        shopData.unshift({ id: 102, name: "L. ASTRO", ovr: 98, pos: "CEN", price: 700 });
+
+        // =================================================================
+        // 2. AUDIO ENGINE (Web Audio API)
+        // =================================================================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'kick') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'whistle') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'goal') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.0);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 1.0);
+            }
         }
 
-        function renderTeam() {
-            const container = document.getElementById('teamList');
-            container.innerHTML = '';
-            myTeam.sort((a,b) => b.ovr - a.ovr).forEach(p => {
-                container.innerHTML += `
-                    <div class="item-row">
-                        <div>
-                            <div class="item-name">${p.name}</div>
-                            <div style="color: #888; font-size: 0.8em;">${p.pos}</div>
-                        </div>
-                        <div class="item-ovr">${p.ovr} OVR</div>
+        // =================================================================
+        // 3. UI RENDERING
+        // =================================================================
+        function updateUI() {
+            document.getElementById('coinAmount').innerText = coins;
+            
+            const teamGrid = document.getElementById('myTeamGrid');
+            teamGrid.innerHTML = '';
+            let sortedTeam = [...myTeam].sort((a,b) => b.ovr - a.ovr);
+            
+            sortedTeam.forEach(p => {
+                teamGrid.innerHTML += `
+                    <div class="player-card">
+                        <div class="player-ovr">${p.ovr}</div>
+                        <div class="player-pos">${p.pos}</div>
+                        <div class="player-name">${p.name}</div>
                     </div>
                 `;
             });
-        }
 
-        function renderShop() {
-            const container = document.getElementById('shopList');
-            container.innerHTML = '';
+            const shopGrid = document.getElementById('shopGrid');
+            shopGrid.innerHTML = '';
             shopData.forEach((p, index) => {
-                let btn = `<button class="item-btn" onclick="buyPlayer(${index})" ${coins < p.price ? 'disabled' : ''}>ACQUISTA (${p.price})</button>`;
-                container.innerHTML += `
-                    <div class="item-row">
-                        <div><div class="item-name">${p.name}</div><div style="color: #00ff88;">${p.ovr} OVR</div></div>
-                        ${btn}
-                    </div>`;
+                let disabled = coins < p.price ? 'disabled' : '';
+                shopGrid.innerHTML += `
+                    <div class="player-card">
+                        <div class="player-ovr">${p.ovr}</div>
+                        <div class="player-pos">${p.pos}</div>
+                        <div class="player-name">${p.name}</div>
+                        <div class="player-price">${p.price} AC</div>
+                        <button class="buy-btn" onclick="buyPlayer(${index})" ${disabled}>ACQUISTA</button>
+                    </div>
+                `;
             });
         }
 
         function buyPlayer(index) {
             const p = shopData[index];
             if (coins >= p.price) {
-                coins -= p.price; updateCoinsUI();
-                myTeam.push({ name: p.name, ovr: p.ovr, pos: "CEN" });
+                coins -= p.price;
+                myTeam.push(p);
                 shopData.splice(index, 1);
-                renderShop();
-                alert(`Hai acquistato ${p.name}!`);
+                playSound('kick');
+                updateUI();
             }
         }
 
-        function renderPacks() {
-            const container = document.getElementById('packList');
-            container.innerHTML = `
-                <div class="item-row">
-                    <div><div class="item-name">PACCHETTO BRONZE</div><div style="color: #cd7f32;">50 AC</div></div>
-                    <button class="item-btn" onclick="buyPack(50)">APRI</button>
-                </div>
-                <div class="item-row">
-                    <div><div class="item-name">PACCHETTO SILVER</div><div style="color: #b0b0b0;">100 AC</div></div>
-                    <button class="item-btn" onclick="buyPack(100)">APRI</button>
-                </div>
-                <div class="item-row">
-                    <div><div class="item-name">PACCHETTO GOLD</div><div style="color: #ffd700;">200 AC</div></div>
-                    <button class="item-btn" onclick="buyPack(200)">APRI</button>
-                </div>
-            `;
+        function navTo(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            document.getElementById(`nav-${pageId}`).classList.add('active');
         }
 
-        function buyPack(cost) {
-            if (coins >= cost) {
-                coins -= cost; updateCoinsUI();
-                const randomName = "PLAYER " + Math.floor(Math.random() * 1000);
-                const randomOvr = Math.floor(Math.random() * (99 - 70 + 1)) + 70;
-                myTeam.push({ name: randomName, ovr: randomOvr, pos: "CEN" });
-                alert(`Hai trovato ${randomName} (${randomOvr} OVR)!`);
-            } else {
-                alert("Monete insufficienti!");
-            }
+        function setTactic(tactic) {
+            currentTactic = tactic;
+            document.querySelectorAll('.tactic-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
         }
 
-        // ==========================================
-        // 3. MOTORE FISICO E GIOCO (IA SENSATA)
-        // ==========================================
+        updateUI();
+
+        // =================================================================
+        // 4. MOTORE FISICO (Vector Math)
+        // =================================================================
         class Vector2 {
             constructor(x = 0, y = 0) { this.x = x; this.y = y; }
             add(v) { this.x += v.x; this.y += v.y; return this; }
@@ -298,25 +708,37 @@
 
         const CANVAS = document.getElementById('gameCanvas');
         const CTX = CANVAS.getContext('2d');
-        const FIELD_WIDTH = 1000;
-        const FIELD_HEIGHT = 600;
-        CANVAS.width = FIELD_WIDTH; CANVAS.height = FIELD_HEIGHT;
-
+        
+        // Dimensioni fisse del campo per la logica
+        const FIELD_WIDTH = 1050;
+        const FIELD_HEIGHT = 680;
+        
+        // Variabili di stato
         let GAME_STATE = 'MENU'; 
-        let matchTime = 90; 
+        let matchTime = 90; // 90 secondi totali (per velocità)
+        let half = 1;
         let lastTimestamp = 0;
         let goalCooldown = 0;
         
+        // Fisica
         const SIMULATION_SPEED = 1.0; 
-        const PLAYER_FORCE = 1.0; 
         const PLAYER_FRICTION = 0.85;
-        const BALL_FRICTION = 0.96;
+        const BALL_FRICTION = 0.98;
+
+        // Statistiche
+        let stats = { possHome: 0, possAway: 0, shotsHome: 0, shotsAway: 0, passesHome: 0, passesAway: 0 };
+        let lastTouchTeam = 'home';
 
         class Entity {
             constructor(x, y, radius, mass, color) {
-                this.pos = new Vector2(x, y); this.vel = new Vector2(0, 0); this.acc = new Vector2(0, 0);
-                this.radius = radius; this.mass = mass; this.color = color;
-                this.friction = PLAYER_FRICTION; this.restitution = 0.5;
+                this.pos = new Vector2(x, y); 
+                this.vel = new Vector2(0, 0); 
+                this.acc = new Vector2(0, 0);
+                this.radius = radius; 
+                this.mass = mass; 
+                this.color = color;
+                this.friction = PLAYER_FRICTION; 
+                this.restitution = 0.5;
             }
             applyForce(force) { this.acc.add(force); }
             update(dt) {
@@ -325,60 +747,132 @@
                 this.pos.y += this.vel.y * dt * 60;
                 this.vel.mult(this.friction);
                 this.acc.mult(0);
-                if (this.pos.x - this.radius < 0) { this.pos.x = this.radius; this.vel.x *= -this.restitution; }
-                if (this.pos.x + this.radius > FIELD_WIDTH) { this.pos.x = FIELD_WIDTH - this.radius; this.vel.x *= -this.restitution; }
-                if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y *= -this.restitution; }
-                if (this.pos.y + this.radius > FIELD_HEIGHT) { this.pos.y = FIELD_HEIGHT - this.radius; this.vel.y *= -this.restitution; }
             }
             draw(ctx) {
-                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; ctx.fill(); ctx.closePath();
+                ctx.beginPath(); 
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; 
+                ctx.fill(); 
+                ctx.closePath();
             }
         }
 
         class Ball extends Entity {
-            constructor(x, y) { super(x, y, 8, 0.5, '#ffffff'); this.friction = BALL_FRICTION; this.restitution = 0.8; this.lastTouch = null; }
-            reset() { this.pos = new Vector2(FIELD_WIDTH / 2, FIELD_HEIGHT / 2); this.vel = new Vector2(0, 0); this.acc = new Vector2(0, 0); }
+            constructor(x, y) { 
+                super(x, y, 9, 0.5, '#ffffff'); 
+                this.friction = BALL_FRICTION; 
+                this.restitution = 0.7; 
+                this.lastTouch = null; 
+            }
+            reset() { 
+                this.pos = new Vector2(FIELD_WIDTH / 2, FIELD_HEIGHT / 2); 
+                this.vel = new Vector2(0, 0); 
+                this.acc = new Vector2(0, 0); 
+            }
+            update(dt) {
+                this.vel.add(this.acc);
+                this.pos.x += this.vel.x * dt * 60;
+                this.pos.y += this.vel.y * dt * 60;
+                this.vel.mult(this.friction);
+                this.acc.mult(0);
+
+                // Logica dei bordi (Gestione GOAL)
+                const goalTop = FIELD_HEIGHT / 2 - 60;
+                const goalBottom = FIELD_HEIGHT / 2 + 60;
+
+                // Bordo Sinistro (Goal Ospiti)
+                if (this.pos.x - this.radius < 0) {
+                    if (this.pos.y > goalTop && this.pos.y < goalBottom) {
+                        // È un goal! Non far rimbalzare.
+                    } else {
+                        this.pos.x = this.radius; 
+                        this.vel.x *= -this.restitution;
+                    }
+                }
+                // Bordo Destro (Goal Casa)
+                if (this.pos.x + this.radius > FIELD_WIDTH) {
+                    if (this.pos.y > goalTop && this.pos.y < goalBottom) {
+                        // È un goal! Non far rimbalzare.
+                    } else {
+                        this.pos.x = FIELD_WIDTH - this.radius; 
+                        this.vel.x *= -this.restitution;
+                    }
+                }
+                // Bordi Alto/Basso
+                if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y *= -this.restitution; }
+                if (this.pos.y + this.radius > FIELD_HEIGHT) { this.pos.y = FIELD_HEIGHT - this.radius; this.vel.y *= -this.restitution; }
+            }
             draw(ctx) {
-                super.draw(ctx);
-                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = '#000'; ctx.fill(); ctx.closePath();
+                // Ombra
+                ctx.beginPath();
+                ctx.arc(this.pos.x + 3, this.pos.y + 3, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)'; 
+                ctx.fill(); 
+                ctx.closePath();
+
+                // Palla
+                ctx.beginPath(); 
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; 
+                ctx.fill(); 
+                ctx.closePath();
+
+                // Dettaglio nero
+                ctx.beginPath(); 
+                ctx.arc(this.pos.x, this.pos.y, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = '#111'; 
+                ctx.fill(); 
+                ctx.closePath();
             }
         }
 
         class Player extends Entity {
             constructor(x, y, teamColor, role, isHome) {
-                super(x, y, 14, 1, teamColor);
+                super(x, y, 16, 1, teamColor);
                 this.role = role; 
                 this.basePos = new Vector2(x, y); 
                 this.isHome = isHome;
+                this.targetPos = new Vector2(x, y);
             }
 
             updateAI(ball, allPlayers, dt) {
                 let distToBall = Vector2.dist(this.pos, ball.pos);
                 let target = this.basePos.clone();
 
+                // Tattiche
+                let offsetAttack = currentTactic === 'ATTACK' ? 150 : currentTactic === 'DEFEND' ? -100 : 50;
+                if (!this.isHome) offsetAttack *= -1;
+
                 if (this.role === 'POR') {
-                    target.y = Math.max(FIELD_HEIGHT/2 - 60, Math.min(FIELD_HEIGHT/2 + 60, ball.pos.y));
-                    if (distToBall < 120) target.x = ball.pos.x;
+                    target.y = Math.max(FIELD_HEIGHT/2 - 70, Math.min(FIELD_HEIGHT/2 + 70, ball.pos.y));
+                    if (distToBall < 150) target.x = ball.pos.x;
                 } else {
-                    let isClosestToBall = true;
+                    let isClosest = true;
                     for (let p of allPlayers) {
                         if (p !== this && p.isHome === this.isHome && p.role !== 'POR') {
-                            if (Vector2.dist(p.pos, ball.pos) < distToBall) { isClosestToBall = false; break; }
+                            if (Vector2.dist(p.pos, ball.pos) < distToBall) { isClosest = false; break; }
                         }
                     }
 
-                    if (isClosestToBall) {
-                        if (distToBall < 250 || (this.isHome && ball.pos.x > 300) || (!this.isHome && ball.pos.x < 700)) {
+                    if (isClosest) {
+                        if (distToBall < 300 || (this.isHome && ball.pos.x > 400) || (!this.isHome && ball.pos.x < 650)) {
                             target = ball.pos.clone();
-                            if (distToBall < this.radius + ball.radius + 10) {
-                                let inShootingZone = this.isHome ? (ball.pos.x > 700) : (ball.pos.x < 300);
+                            
+                            // Se vicino alla palla, agisci
+                            if (distToBall < this.radius + ball.radius + 15) {
+                                let inShootingZone = this.isHome ? (ball.pos.x > 750) : (ball.pos.x < 300);
+                                
                                 if (inShootingZone) {
-                                    let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.3).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.3).norm();
-                                    ball.applyForce(shootDir.mult(25));
-                                    ball.lastTouch = this;
+                                    // TIRA
+                                    let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.4).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.4).norm();
+                                    ball.applyForce(shootDir.mult(22));
+                                    ball.lastTouch = this.isHome ? 'home' : 'away';
+                                    
+                                    if (this.isHome) stats.shotsHome++; else stats.shotsAway++;
+                                    playSound('kick');
+                                    addCommentary(`🔥 Tiro potente di ${this.isHome ? 'ECLIPSE FC' : 'IRON WOLVES'}!`);
                                 } else {
+                                    // PASSA
                                     let bestPassTarget = null;
                                     let bestDistance = -1;
                                     for (let p of allPlayers) {
@@ -387,110 +881,254 @@
                                             if (advance > 0 && advance > bestDistance) { bestDistance = advance; bestPassTarget = p; }
                                         }
                                     }
+
                                     if (bestPassTarget) {
                                         let passDir = new Vector2(bestPassTarget.pos.x - ball.pos.x, bestPassTarget.pos.y - ball.pos.y).norm();
-                                        ball.applyForce(passDir.mult(15));
-                                        ball.lastTouch = this;
-                                    } else {
-                                        let shootDir = this.isHome ? new Vector2(1, (Math.random() - 0.5) * 0.5).norm() : new Vector2(-1, (Math.random() - 0.5) * 0.5).norm();
-                                        ball.applyForce(shootDir.mult(20));
-                                        ball.lastTouch = this;
+                                        ball.applyForce(passDir.mult(16));
+                                        ball.lastTouch = this.isHome ? 'home' : 'away';
+                                        
+                                        if (this.isHome) stats.passesHome++; else stats.passesAway++;
+                                        playSound('kick');
                                     }
                                 }
                             }
                         } else {
-                            let ballInOpponentHalf = this.isHome ? ball.pos.x > FIELD_WIDTH / 2 : ball.pos.x < FIELD_WIDTH / 2;
-                            let offsetX = ballInOpponentHalf ? 150 : -50;
-                            target.x = this.basePos.x + offsetX;
-                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3;
+                            target.x = this.basePos.x + offsetAttack;
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.4;
                         }
                     } else {
+                        // Posizionamento difensivo
                         if (this.isHome) {
-                            target.x = Math.min(this.basePos.x, ball.pos.x - 100);
-                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.2;
+                            target.x = Math.min(this.basePos.x + offsetAttack, ball.pos.x - 150);
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3;
                         } else {
-                            target.x = Math.max(this.basePos.x, ball.pos.x + 100);
-                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.2;
+                            target.x = Math.max(this.basePos.x + offsetAttack, ball.pos.x + 150);
+                            target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3;
                         }
                     }
                 }
 
                 let dir = new Vector2(target.x - this.pos.x, target.y - this.pos.y).norm();
-                this.applyForce(dir.mult(PLAYER_FORCE));
+                
+                // Forza in base alla distanza
+                let forceMag = 0.8;
+                if (this.role === 'ATT') forceMag = 1.1;
+                if (this.role === 'DIF') forceMag = 0.9;
+                
+                this.applyForce(dir.mult(forceMag));
+            }
+            
+            draw(ctx) {
+                // Ombra
+                ctx.beginPath();
+                ctx.arc(this.pos.x + 4, this.pos.y + 4, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.4)'; 
+                ctx.fill(); 
+                ctx.closePath();
+
+                // Giocatore
+                ctx.beginPath(); 
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; 
+                ctx.fill(); 
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.stroke();
+                ctx.closePath();
+
+                // Numero di maglia (finto)
+                if (this.role !== 'POR') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = 'bold 12px Montserrat';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.role === 'ATT' ? '9' : this.role === 'CEN' ? '8' : '4', this.pos.x, this.pos.y);
+                }
             }
         }
 
         function resolveCollision(e1, e2) {
             let dist = Vector2.dist(e1.pos, e2.pos);
             let minDist = e1.radius + e2.radius;
+            
             if (dist < minDist && dist > 0) {
                 let nx = (e2.pos.x - e1.pos.x) / dist;
                 let ny = (e2.pos.y - e1.pos.y) / dist;
                 let overlap = minDist - dist;
-                e1.pos.x -= nx * overlap * 0.5; e1.pos.y -= ny * overlap * 0.5;
-                e2.pos.x += nx * overlap * 0.5; e2.pos.y += ny * overlap * 0.5;
-                let rvx = e2.vel.x - e1.vel.x; let rvy = e2.vel.y - e1.vel.y;
+                
+                e1.pos.x -= nx * overlap * 0.5; 
+                e1.pos.y -= ny * overlap * 0.5;
+                e2.pos.x += nx * overlap * 0.5; 
+                e2.pos.y += ny * overlap * 0.5;
+                
+                let rvx = e2.vel.x - e1.vel.x; 
+                let rvy = e2.vel.y - e1.vel.y;
                 let normalVelocity = rvx * nx + rvy * ny;
+                
                 if (normalVelocity > 0) return;
+                
                 let e = Math.min(e1.restitution, e2.restitution);
                 let j = -(1 + e) * normalVelocity / (1/e1.mass + 1/e2.mass);
-                let impulseX = j * nx; let impulseY = j * ny;
-                e1.vel.x -= impulseX / e1.mass; e1.vel.y -= impulseY / e1.mass;
-                e2.vel.x += impulseX / e2.mass; e2.vel.y += impulseY / e2.mass;
+                let impulseX = j * nx; 
+                let impulseY = j * ny;
+                
+                e1.vel.x -= impulseX / e1.mass; 
+                e1.vel.y -= impulseY / e1.mass;
+                e2.vel.x += impulseX / e2.mass; 
+                e2.vel.y += impulseY / e2.mass;
             }
         }
 
-        let ball, players = [], scoreHome = 0, scoreAway = 0;
+        // =================================================================
+        // 5. GESTIONE PARTITA
+        // =================================================================
+        let ball;
+        let players = [];
+        let scoreHome = 0;
+        let scoreAway = 0;
+
+        function addCommentary(text) {
+            const box = document.getElementById('commentaryBox');
+            const p = document.createElement('p');
+            p.innerText = text;
+            
+            // Colora in base al testo
+            if (text.includes('GOAL')) p.style.color = 'var(--primary)';
+            else if (text.includes('Tiro')) p.style.color = 'var(--gold)';
+            else p.style.color = '#d1d5db';
+            
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
 
         function initGame() {
             ball = new Ball(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
             players = [];
-            // ECLIPSE FC (Casa - Sinistra)
-            players.push(new Player(50, FIELD_HEIGHT / 2, '#e63946', 'POR', true));
-            players.push(new Player(200, FIELD_HEIGHT / 4, '#e63946', 'DIF', true));
-            players.push(new Player(200, FIELD_HEIGHT / 2, '#e63946', 'DIF', true));
-            players.push(new Player(200, FIELD_HEIGHT * 0.75, '#e63946', 'DIF', true));
-            players.push(new Player(400, FIELD_HEIGHT / 3, '#e63946', 'CEN', true));
-            players.push(new Player(400, FIELD_HEIGHT * 0.66, '#e63946', 'CEN', true));
-            players.push(new Player(600, FIELD_HEIGHT / 2, '#e63946', 'ATT', true));
+            scoreHome = 0;
+            scoreAway = 0;
+            matchTime = 90;
+            half = 1;
+            stats = { possHome: 0, possAway: 0, shotsHome: 0, shotsAway: 0, passesHome: 0, passesAway: 0 };
 
-            // NEON TIGERS (Ospiti - Destra)
-            players.push(new Player(FIELD_WIDTH - 50, FIELD_HEIGHT / 2, '#00b894', 'POR', false));
-            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT / 4, '#00b894', 'DIF', false));
-            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT / 2, '#00b894', 'DIF', false));
-            players.push(new Player(FIELD_WIDTH - 200, FIELD_HEIGHT * 0.75, '#00b894', 'DIF', false));
-            players.push(new Player(FIELD_WIDTH - 400, FIELD_HEIGHT / 3, '#00b894', 'CEN', false));
-            players.push(new Player(FIELD_WIDTH - 400, FIELD_HEIGHT * 0.66, '#00b894', 'CEN', false));
-            players.push(new Player(FIELD_WIDTH - 600, FIELD_HEIGHT / 2, '#00b894', 'ATT', false));
+            // Setup Campo
+            CANVAS.width = FIELD_WIDTH;
+            CANVAS.height = FIELD_HEIGHT;
 
-            scoreHome = 0; scoreAway = 0; matchTime = 90;
-            document.getElementById('score-home').innerText = "0"; document.getElementById('score-away').innerText = "0";
+            // Formazione ECLIPSE FC (Casa - Sinistra)
+            players.push(new Player(FIELD_WIDTH * 0.05, FIELD_HEIGHT / 2, '#e63946', 'POR', true));
+            players.push(new Player(FIELD_WIDTH * 0.20, FIELD_HEIGHT * 0.2, '#e63946', 'DIF', true));
+            players.push(new Player(FIELD_WIDTH * 0.20, FIELD_HEIGHT * 0.4, '#e63946', 'DIF', true));
+            players.push(new Player(FIELD_WIDTH * 0.20, FIELD_HEIGHT * 0.6, '#e63946', 'DIF', true));
+            players.push(new Player(FIELD_WIDTH * 0.20, FIELD_HEIGHT * 0.8, '#e63946', 'DIF', true));
+            players.push(new Player(FIELD_WIDTH * 0.40, FIELD_HEIGHT * 0.3, '#e63946', 'CEN', true));
+            players.push(new Player(FIELD_WIDTH * 0.40, FIELD_HEIGHT * 0.7, '#e63946', 'CEN', true));
+            players.push(new Player(FIELD_WIDTH * 0.45, FIELD_HEIGHT * 0.5, '#e63946', 'CEN', true));
+            players.push(new Player(FIELD_WIDTH * 0.60, FIELD_HEIGHT * 0.2, '#e63946', 'ATT', true));
+            players.push(new Player(FIELD_WIDTH * 0.60, FIELD_HEIGHT * 0.8, '#e63946', 'ATT', true));
+            players.push(new Player(FIELD_WIDTH * 0.65, FIELD_HEIGHT * 0.5, '#e63946', 'ATT', true));
+
+            // Formazione IRON WOLVES (Ospiti - Destra)
+            players.push(new Player(FIELD_WIDTH * 0.95, FIELD_HEIGHT / 2, '#00b894', 'POR', false));
+            players.push(new Player(FIELD_WIDTH * 0.80, FIELD_HEIGHT * 0.2, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH * 0.80, FIELD_HEIGHT * 0.4, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH * 0.80, FIELD_HEIGHT * 0.6, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH * 0.80, FIELD_HEIGHT * 0.8, '#00b894', 'DIF', false));
+            players.push(new Player(FIELD_WIDTH * 0.60, FIELD_HEIGHT * 0.3, '#00b894', 'CEN', false));
+            players.push(new Player(FIELD_WIDTH * 0.60, FIELD_HEIGHT * 0.7, '#00b894', 'CEN', false));
+            players.push(new Player(FIELD_WIDTH * 0.55, FIELD_HEIGHT * 0.5, '#00b894', 'CEN', false));
+            players.push(new Player(FIELD_WIDTH * 0.40, FIELD_HEIGHT * 0.2, '#00b894', 'ATT', false));
+            players.push(new Player(FIELD_WIDTH * 0.40, FIELD_HEIGHT * 0.8, '#00b894', 'ATT', false));
+            players.push(new Player(FIELD_WIDTH * 0.35, FIELD_HEIGHT * 0.5, '#00b894', 'ATT', false));
+
+            document.getElementById('matchScore').innerText = "0 - 0";
+            document.getElementById('commentaryBox').innerHTML = "<p style='color: var(--primary);'>⚽ Inizia il match! ECLIPSE FC vs IRON WOLVES.</p>";
+            document.getElementById('goalOverlay').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'none';
+            
+            playSound('whistle');
         }
 
         function drawField(ctx) {
-            for(let i=0; i<10; i++) {
+            // Erba a strisce
+            for(let i=0; i<16; i++) {
                 ctx.fillStyle = i % 2 === 0 ? '#1a3a1a' : '#1f421f';
-                ctx.fillRect((FIELD_WIDTH/10)*i, 0, FIELD_WIDTH/10, FIELD_HEIGHT);
+                ctx.fillRect((FIELD_WIDTH/16)*i, 0, FIELD_WIDTH/16, FIELD_HEIGHT);
             }
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 70, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(FIELD_WIDTH / 2, 0); ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT); ctx.stroke();
-            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 120, 150, 240); 
-            ctx.strokeRect(FIELD_WIDTH - 150, FIELD_HEIGHT / 2 - 120, 150, 240);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillRect(0, FIELD_HEIGHT / 2 - 40, 8, 80); 
-            ctx.fillRect(FIELD_WIDTH - 8, FIELD_HEIGHT / 2 - 40, 8, 80);
+
+            // Linee
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; 
+            ctx.lineWidth = 3;
+            
+            // Cerchio centrocampo
+            ctx.beginPath(); 
+            ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 80, 0, Math.PI * 2); 
+            ctx.stroke();
+            
+            // Linea centrocampo
+            ctx.beginPath(); 
+            ctx.moveTo(FIELD_WIDTH / 2, 0); 
+            ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT); 
+            ctx.stroke();
+            
+            // Aree di rigore
+            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 150, 160, 300); 
+            ctx.strokeRect(FIELD_WIDTH - 160, FIELD_HEIGHT / 2 - 150, 160, 300);
+            
+            // Aree piccole
+            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 80, 50, 160);
+            ctx.strokeRect(FIELD_WIDTH - 50, FIELD_HEIGHT / 2 - 80, 50, 160);
+
+            // Porte (Bianche)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(0, FIELD_HEIGHT / 2 - 60, 8, 120); 
+            ctx.fillRect(FIELD_WIDTH - 8, FIELD_HEIGHT / 2 - 60, 8, 120);
+
+            // Rete (Effetto visivo)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            for(let i=0; i<60; i+=10) {
+                ctx.beginPath(); ctx.moveTo(8, FIELD_HEIGHT / 2 - 60 + i); ctx.lineTo(40, FIELD_HEIGHT / 2 - 60 + i); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(FIELD_WIDTH - 8, FIELD_HEIGHT / 2 - 60 + i); ctx.lineTo(FIELD_WIDTH - 40, FIELD_HEIGHT / 2 - 60 + i); ctx.stroke();
+            }
         }
 
         function checkGoal() {
-            if (ball.pos.x > FIELD_WIDTH - ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreHome++; triggerGoal("ECLIPSE FC"); }
-            else if (ball.pos.x < ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) { scoreAway++; triggerGoal("NEON TIGERS"); }
+            const goalTop = FIELD_HEIGHT / 2 - 60;
+            const goalBottom = FIELD_HEIGHT / 2 + 60;
+
+            // Goal per ECLIPSE FC (Palla entra a destra)
+            if (ball.pos.x > FIELD_WIDTH - ball.radius && ball.pos.y > goalTop && ball.pos.y < goalBottom) { 
+                scoreHome++; 
+                triggerGoal("ECLIPSE FC"); 
+            }
+            // Goal per IRON WOLVES (Palla entra a sinistra)
+            else if (ball.pos.x < ball.radius && ball.pos.y > goalTop && ball.pos.y < goalBottom) { 
+                scoreAway++; 
+                triggerGoal("IRON WOLVES"); 
+            }
         }
 
         function triggerGoal(team) {
-            GAME_STATE = 'GOAL'; goalCooldown = 2.0;
-            const gt = document.getElementById('goalText'); gt.innerText = `GOAL! ${team}`; gt.style.display = 'block';
-            document.getElementById('score-home').innerText = scoreHome; document.getElementById('score-away').innerText = scoreAway;
+            GAME_STATE = 'GOAL'; 
+            goalCooldown = 3.0;
+            
+            document.getElementById('matchScore').innerText = `${scoreHome} - ${scoreAway}`;
+            
+            const overlay = document.getElementById('goalOverlay');
+            overlay.innerText = `GOAL! ${team}`;
+            overlay.style.display = 'block';
+            
+            playSound('goal');
+            addCommentary(`⚽⚽⚽ GOOOOOAL! Segna ${team}!`);
+        }
+
+        function updateStatsUI() {
+            let total = stats.possHome + stats.possAway;
+            let poss = total === 0 ? 50 : Math.round((stats.possHome / total) * 100);
+            
+            document.getElementById('statPoss').innerText = `${poss}%`;
+            document.getElementById('statShots').innerText = `${stats.shotsHome} - ${stats.shotsAway}`;
+            document.getElementById('statPasses').innerText = `${stats.passesHome} - ${stats.passesAway}`;
         }
 
         function gameLoop(timestamp) {
@@ -500,28 +1138,54 @@
 
             if (GAME_STATE === 'PLAYING') {
                 matchTime -= dt;
+                
+                // Fine partita
                 if (matchTime <= 0) {
-                    matchTime = 0; GAME_STATE = 'GAMEOVER';
-                    document.getElementById('finalScore').innerText = `${scoreHome} - ${scoreAway}`;
-                    document.getElementById('resultScreen').classList.remove('hidden');
+                    matchTime = 0; 
+                    GAME_STATE = 'GAMEOVER';
+                    playSound('whistle');
+                    addCommentary(`🏁 Finita! Risultato finale: ${scoreHome} - ${scoreAway}`);
+                    
+                    setTimeout(() => {
+                        document.getElementById('finalScore').innerText = `${scoreHome} - ${scoreAway}`;
+                        document.getElementById('resultScreen').style.display = 'block';
+                    }, 2000);
                 }
-                let min = Math.floor(matchTime / 60); let sec = Math.floor(matchTime % 60);
-                document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 
+                let min = Math.floor(matchTime / 60); 
+                let sec = Math.floor(matchTime % 60);
+                document.getElementById('matchTimer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+
+                // Aggiorna possesso
+                if (ball.lastTouch === 'home') stats.possHome += dt;
+                else if (ball.lastTouch === 'away') stats.possAway += dt;
+
+                // Aggiorna IA
                 players.forEach(p => p.updateAI(ball, players, dt));
                 ball.update(dt); 
                 players.forEach(p => p.update(dt));
                 
+                // Collisioni
                 players.forEach(p => resolveCollision(p, ball));
                 for (let i = 0; i < players.length; i++) {
-                    for (let j = i + 1; j < players.length; j++) { resolveCollision(players[i], players[j]); }
+                    for (let j = i + 1; j < players.length; j++) { 
+                        resolveCollision(players[i], players[j]); 
+                    }
                 }
+                
                 checkGoal();
+                updateStatsUI();
+
             } else if (GAME_STATE === 'GOAL') {
                 goalCooldown -= dt;
                 if (goalCooldown <= 0) {
-                    document.getElementById('goalText').style.display = 'none'; ball.reset();
-                    players.forEach(p => { p.pos.x = p.basePos.x; p.pos.y = p.basePos.y; p.vel.mult(0); });
+                    document.getElementById('goalOverlay').style.display = 'none';
+                    ball.reset();
+                    players.forEach(p => { 
+                        p.pos.x = p.basePos.x; 
+                        p.pos.y = p.basePos.y; 
+                        p.vel.mult(0); 
+                    });
                     GAME_STATE = 'PLAYING';
                 }
             }
@@ -530,19 +1194,26 @@
             ball.draw(CTX); 
             players.forEach(p => p.draw(CTX));
             
-            if (GAME_STATE !== 'MENU') requestAnimationFrame(gameLoop);
+            if (GAME_STATE === 'PLAYING' || GAME_STATE === 'GOAL') {
+                requestAnimationFrame(gameLoop);
+            }
         }
 
         function startMatch() {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById('hud').classList.remove('hidden');
-            CANVAS.style.display = 'block';
-            
+            document.getElementById('matchScreen').classList.add('active');
             initGame();
             GAME_STATE = 'PLAYING';
             lastTimestamp = performance.now();
             requestAnimationFrame(gameLoop);
         }
+
+        function closeMatch() {
+            document.getElementById('matchScreen').classList.remove('active');
+            document.getElementById('resultScreen').style.display = 'none';
+            GAME_STATE = 'MENU';
+            navTo('home');
+        }
+
     </script>
 </body>
 </html>
