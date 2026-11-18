@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECLIPSE: PRO LEAGUE 2D - AI SIMULATION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #0a0a0f;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            color: white;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        canvas {
+            background-color: #1a2f1a;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.2);
+            border-radius: 10px;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 15, 0.9);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 10; transition: opacity 0.5s;
+        }
+
+        .hidden { opacity: 0; pointer-events: none; }
+
+        h1 {
+            font-size: 4em; margin: 0 0 10px 0;
+            color: #00ff88; text-shadow: 0 0 20px #00ff88;
+            letter-spacing: 5px;
+        }
+
+        h2 { color: #e63946; font-size: 2em; margin-bottom: 30px; }
+
+        .btn {
+            background: transparent;
+            color: #00ff88; border: 2px solid #00ff88;
+            padding: 15px 40px; font-size: 1.5em;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer; border-radius: 5px;
+            transition: all 0.3s;
+            text-transform: uppercase; font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #00ff88; color: #0a0a0f;
+            box-shadow: 0 0 30px #00ff88;
+        }
+
+        #hud {
+            position: absolute; top: 20px; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5; pointer-events: none;
+        }
+
+        .scoreboard {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #e63946;
+            border-radius: 10px; padding: 10px 30px;
+            display: flex; align-items: center; gap: 20px;
+            font-size: 2em; font-weight: 900;
+            box-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+        }
+
+        .team-name { color: #fff; font-size: 0.6em; letter-spacing: 2px; }
+        #timer { color: #00ff88; font-size: 1.2em; }
+
+        .goal-text {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6em; color: #00ff88;
+            text-shadow: 0 0 40px #00ff88;
+            font-weight: 900; z-index: 20;
+            display: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        #resultScreen {
+            display: none;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #00ff88;
+            padding: 40px; border-radius: 20px;
+            text-align: center; z-index: 30;
+        }
+
+        #resultScreen h1 { font-size: 3em; color: #e63946; }
+        #resultScreen .final-score { font-size: 4em; color: #fff; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="gameContainer">
+        <!-- MENU INIZIALE -->
+        <div id="mainMenu" class="overlay">
+            <h1>ECLIPSE</h1>
+            <h2>AI SIMULATION MODE</h2>
+            <button class="btn" onclick="startSimulation()">AVVIA SIMULAZIONE</button>
+            <p style="margin-top: 20px; color: #888; font-size: 0.8em;">L'IA giocherà da sola. Tu guardi.</p>
+        </div>
+
+        <!-- HUD DI GIOCO -->
+        <div id="hud" class="hidden">
+            <div class="scoreboard">
+                <div class="team-name">SFIDA CUGINI</div>
+                <div id="score-home">0</div>
+                <div>-</div>
+                <div id="score-away">0</div>
+                <div class="team-name">FC STARS</div>
+                <div style="margin-left: 20px; border-left: 1px solid #444; padding-left: 20px;">
+                    <span id="timer">01:30</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TESTO GOAL -->
+        <div id="goalText" class="goal-text">GOAL!</div>
+
+        <!-- SCHERMATA RISULTATO FINALE -->
+        <div id="resultScreen">
+            <h1>FINE PARTITA</h1>
+            <div class="final-score" id="finalScore">0 - 0</div>
+            <p style="color: #888;">L'IA ha completato la simulazione.</p>
+            <button class="btn" onclick="location.reload()" style="margin-top: 20px;">TORNA AL MENU</button>
+        </div>
+
+        <!-- CANVAS DI GIOCO -->
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. MOTORE MATEMATICO (Vector2D)
+        // ==========================================
+        class Vector2 {
+            constructor(x = 0, y = 0) { this.x = x; this.y = y; }
+            add(v) { this.x += v.x; this.y += v.y; return this; }
+            sub(v) { this.x -= v.x; this.y -= v.y; return this; }
+            mult(n) { this.x *= n; this.y *= n; return this; }
+            div(n) { this.x /= n; this.y /= n; return this; }
+            mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+            magSq() { return this.x * this.x + this.y * this.y; }
+            norm() { let m = this.mag(); if (m !== 0) { this.div(m); } return this; }
+            limit(max) { if (this.magSq() > max * max) { this.norm().mult(max); } return this; }
+            dist(v) { let dx = this.x - v.x; let dy = this.y - v.y; return Math.sqrt(dx * dx + dy * dy); }
+            static dist(v1, v2) { let dx = v1.x - v2.x; let dy = v1.y - v2.y; return Math.sqrt(dx * dx + dy * dy); }
+        }
+
+        // ==========================================
+        // 2. CONFIGURAZIONE GLOBALE
+        // ==========================================
+        const CANVAS = document.getElementById('gameCanvas');
+        const CTX = CANVAS.getContext('2d');
+        
+        const FIELD_WIDTH = 1000;
+        const FIELD_HEIGHT = 600;
+        CANVAS.width = FIELD_WIDTH;
+        CANVAS.height = FIELD_HEIGHT;
+
+        const COLORS = {
+            FIELD: '#1a2f1a',
+            LINES: 'rgba(255, 255, 255, 0.4)',
+            HOME_TEAM: '#e63946', // Rosso
+            AWAY_TEAM: '#00b894', // Verde
+            BALL: '#ffffff'
+        };
+
+        // Stato del Gioco (Nessun input manuale)
+        let GAME_STATE = 'MENU'; // MENU, PLAYING, GOAL, GAMEOVER
+        let matchTime = 90; // 90 secondi
+        let lastTimestamp = 0;
+        let goalCooldown = 0;
+        
+        // Moltiplicatore di velocità per la simulazione (più alto = più veloce)
+        const SIMULATION_SPEED = 2.0; 
+
+        // ==========================================
+        // 3. ENTITÀ BASE
+        // ==========================================
+        class Entity {
+            constructor(x, y, radius, mass, color) {
+                this.pos = new Vector2(x, y);
+                this.vel = new Vector2(0, 0);
+                this.acc = new Vector2(0, 0);
+                this.radius = radius;
+                this.mass = mass;
+                this.color = color;
+                this.friction = 0.95;
+                this.restitution = 0.5;
+            }
+
+            applyForce(force) {
+                this.acc.add(force.div(this.mass));
+            }
+
+            update(dt) {
+                if (dt > 0.1) dt = 0.1;
+                this.vel.add(this.acc);
+                // Moltiplichiamo dt per SIMULATION_SPEED per far correre il gioco più veloce
+                this.pos.add(this.vel.clone().mult(dt * 60 * SIMULATION_SPEED));
+                
+                this.vel.mult(this.friction);
+                this.acc.mult(0);
+
+                // Collisione con i bordi
+                if (this.pos.x - this.radius < 0) { this.pos.x = this.radius; this.vel.x *= -this.restitution; }
+                if (this.pos.x + this.radius > FIELD_WIDTH) { this.pos.x = FIELD_WIDTH - this.radius; this.vel.x *= -this.restitution; }
+                if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y *= -this.restitution; }
+                if (this.pos.y + this.radius > FIELD_HEIGHT) { this.pos.y = FIELD_HEIGHT - this.radius; this.vel.y *= -this.restitution; }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.closePath();
+                ctx.shadowBlur = 0;
+            }
+            
+            clone() {
+                return new Vector2(this.x, this.y);
+            }
+        }
+
+        Vector2.prototype.clone = function() { return new Vector2(this.x, this.y); };
+
+        // ==========================================
+        // 4. Palla (Ball)
+        // ==========================================
+        class Ball extends Entity {
+            constructor(x, y) {
+                super(x, y, 8, 0.5, COLORS.BALL);
+                this.friction = 0.98;
+                this.restitution = 0.8;
+                this.lastTouch = null;
+            }
+            
+            reset() {
+                this.pos = new Vector2(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
+                this.vel = new Vector2(0, 0);
+                this.acc = new Vector2(0, 0);
+            }
+
+            draw(ctx) {
+                super.draw(ctx);
+                ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        // ==========================================
+        // 5. Giocatori (Player) - TUTTI CONTROLLATI DALL'IA
+        // ==========================================
+        class Player extends Entity {
+            constructor(x, y, teamColor, role, isHome) {
+                super(x, y, 12, 70, teamColor);
+                this.role = role; // 'ATT', 'CEN', 'DIF', 'POR'
+                this.basePos = new Vector2(x, y);
+                this.speed = 0.4; // Velocità IA
+                this.friction = 0.85;
+                this.isHome = isHome; // true = squadra di casa, false = ospite
+                this.stamina = 100;
+            }
+
+            // IA Avanzata per il movimento e la ricerca della palla
+            updateAI(ball, dt) {
+                let distToBall = Vector2.dist(this.pos, ball.pos);
+                let target = new Vector2(this.basePos.x, this.basePos.y);
+                let force = new Vector2(0, 0);
+
+                // Se la palla è nella metà campo avversaria, spingiti in avanti
+                let ballInOpponentHalf = this.isHome ? ball.pos.x > FIELD_WIDTH / 2 : ball.pos.x < FIELD_WIDTH / 2;
+
+                if (this.role === 'POR') {
+                    // Portiere: segue la palla solo verticalmente nella sua area
+                    target.y = Math.max(FIELD_HEIGHT/2 - 80, Math.min(FIELD_HEIGHT/2 + 80, ball.pos.y));
+                    if (distToBall < 120) {
+                        // Se la palla è molto vicina, esci e colpiscila
+                        target.x = ball.pos.x;
+                    }
+                } else {
+                    // Giocatori di movimento
+                    if (distToBall < 150) {
+                        // Insegui la palla
+                        target = ball.pos;
+                    } else {
+                        // Posizionati tatticamente in base alla palla e al ruolo
+                        let offsetX = ballInOpponentHalf ? 100 : -50; // Spostamento in avanti se la palla è in attacco
+                        let offsetY = 0;
+                        
+                        if (this.role === 'ATT') { offsetX += 150; }
+                        else if (this.role === 'DIF') { offsetX -= 100; }
+                        
+                        target.x = this.basePos.x + offsetX;
+                        target.y = this.basePos.y + (ball.pos.y - FIELD_HEIGHT/2) * 0.3; // Segui la palla sull'asse Y
+                    }
+                }
+
+                // Calcola il vettore direzione verso il target
+                let dir = new Vector2(target.x - this.pos.x, target.y - this.pos.y).norm();
+                
+                // Applica forza
+                force = dir.mult(this.speed);
+                this.applyForce(force);
+                
+                // Tiro automatico se sei vicino alla palla
+                if (distToBall < this.radius + ball.radius + 10) {
+                    this.tryShoot(ball);
+                }
+            }
+
+            tryShoot(ball) {
+                // Se sei un attaccante e sei nella metà campo avversaria, tira verso la porta
+                let shootDir;
+                if (this.isHome) {
+                    shootDir = new Vector2(1, (Math.random() - 0.5) * 0.5).norm();
+                } else {
+                    shootDir = new Vector2(-1, (Math.random() - 0.5) * 0.5).norm();
+                }
+                
+                // Applica una forza di tiro potente
+                ball.applyForce(shootDir.mult(150));
+            }
+
+            draw(ctx) {
+                super.draw(ctx);
+            }
+        }
+
+        // ==========================================
+        // 6. MOTORE FISICO (Collisioni)
+        // ==========================================
+        function resolveCollision(e1, e2) {
+            let dist = Vector2.dist(e1.pos, e2.pos);
+            let minDist = e1.radius + e2.radius;
+
+            if (dist < minDist && dist > 0) {
+                let nx = (e2.pos.x - e1.pos.x) / dist;
+                let ny = (e2.pos.y - e1.pos.y) / dist;
+
+                let overlap = minDist - dist;
+                e1.pos.x -= nx * overlap * 0.5;
+                e1.pos.y -= ny * overlap * 0.5;
+                e2.pos.x += nx * overlap * 0.5;
+                e2.pos.y += ny * overlap * 0.5;
+
+                let rvx = e2.vel.x - e1.vel.x;
+                let rvy = e2.vel.y - e1.vel.y;
+                let normalVelocity = rvx * nx + rvy * ny;
+
+                if (normalVelocity > 0) return;
+
+                let e = Math.min(e1.restitution, e2.restitution);
+                let j = -(1 + e) * normalVelocity / (1/e1.mass + 1/e2.mass);
+
+                let impulseX = j * nx;
+                let impulseY = j * ny;
+
+                e1.vel.x -= impulseX / e1.mass;
+                e1.vel.y -= impulseY / e1.mass;
+                e2.vel.x += impulseX / e2.mass;
+                e2.vel.y += impulseY / e2.mass;
+            }
+        }
+
+        // ==========================================
+        // 7. GESTIONE DEL GIOCO
+        // ==========================================
+        let ball;
+        let players = [];
+        let scoreHome = 0;
+        let scoreAway = 0;
+
+        function initGame() {
+            ball = new Ball(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
+            players = [];
+
+            // Squadra di casa (TUTTI IA ORA)
+            players.push(new Player(FIELD_WIDTH / 4, FIELD_HEIGHT / 2, COLORS.HOME_TEAM, 'CEN', true));
+            players.push(new Player(FIELD_WIDTH / 4 - 50, FIELD_HEIGHT / 2 - 50, COLORS.HOME_TEAM, 'DIF', true));
+            players.push(new Player(FIELD_WIDTH / 4 + 50, FIELD_HEIGHT / 2 + 50, COLORS.HOME_TEAM, 'ATT', true));
+            players.push(new Player(80, FIELD_HEIGHT / 2, COLORS.HOME_TEAM, 'POR', true));
+
+            // Squadra ospite (TUTTI IA)
+            players.push(new Player(FIELD_WIDTH - 80, FIELD_HEIGHT / 2, COLORS.AWAY_TEAM, 'POR', false));
+            players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 2, COLORS.AWAY_TEAM, 'DIF', false));
+            players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 2 - 80, COLORS.AWAY_TEAM, 'CEN', false));
+            players.push(new Player(FIELD_WIDTH * 0.75, FIELD_HEIGHT / 2 + 80, COLORS.AWAY_TEAM, 'ATT', false));
+
+            scoreHome = 0;
+            scoreAway = 0;
+            matchTime = 90;
+            updateScoreUI();
+        }
+
+        // ==========================================
+        // 8. RENDERING E GAME LOOP
+        // ==========================================
+        function drawField(ctx) {
+            ctx.fillStyle = COLORS.FIELD;
+            ctx.fillRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
+
+            ctx.strokeStyle = COLORS.LINES;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(FIELD_WIDTH / 2, FIELD_HEIGHT / 2, 80, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(FIELD_WIDTH / 2, 0);
+            ctx.lineTo(FIELD_WIDTH / 2, FIELD_HEIGHT);
+            ctx.stroke();
+
+            ctx.strokeRect(0, FIELD_HEIGHT / 2 - 100, 120, 200);
+            ctx.strokeRect(FIELD_WIDTH - 120, FIELD_HEIGHT / 2 - 100, 120, 200);
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, FIELD_HEIGHT / 2 - 40, 5, 80);
+            ctx.fillRect(FIELD_WIDTH - 5, FIELD_HEIGHT / 2 - 40, 5, 80);
+        }
+
+        function checkGoal() {
+            if (ball.pos.x > FIELD_WIDTH - ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) {
+                scoreHome++;
+                triggerGoal("SFIDA CUGINI");
+            }
+            else if (ball.pos.x < ball.radius && ball.pos.y > FIELD_HEIGHT / 2 - 40 && ball.pos.y < FIELD_HEIGHT / 2 + 40) {
+                scoreAway++;
+                triggerGoal("FC STARS");
+            }
+        }
+
+        function triggerGoal(team) {
+            GAME_STATE = 'GOAL';
+            goalCooldown = 1.5; // Pausa breve per la simulazione
+            const goalText = document.getElementById('goalText');
+            goalText.innerText = `GOAL! ${team}`;
+            goalText.style.display = 'block';
+            updateScoreUI();
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-home').innerText = scoreHome;
+            document.getElementById('score-away').innerText = scoreAway;
+        }
+
+        function gameLoop(timestamp) {
+            let dt = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (GAME_STATE === 'PLAYING') {
+                matchTime -= dt * SIMULATION_SPEED; // Timer accelerato
+                if (matchTime <= 0) {
+                    matchTime = 0;
+                    GAME_STATE = 'GAMEOVER';
+                    showResult();
+                }
+
+                let min = Math.floor(matchTime / 60);
+                let sec = Math.floor(matchTime % 60);
+                document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+
+                // Aggiorna IA per tutti i giocatori
+                players.forEach(p => p.updateAI(ball, dt));
+
+                // Fisica
+                ball.update(dt);
+                players.forEach(p => p.update(dt));
+
+                // Collisioni
+                players.forEach(p => resolveCollision(p, ball));
+                for (let i = 0; i < players.length; i++) {
+                    for (let j = i + 1; j < players.length; j++) {
+                        resolveCollision(players[i], players[j]);
+                    }
+                }
+
+                checkGoal();
+            } else if (GAME_STATE === 'GOAL') {
+                goalCooldown -= dt;
+                if (goalCooldown <= 0) {
+                    document.getElementById('goalText').style.display = 'none';
+                    ball.reset();
+                    players.forEach(p => {
+                        p.pos.x = p.basePos.x;
+                        p.pos.y = p.basePos.y;
+                        p.vel.mult(0);
+                    });
+                    GAME_STATE = 'PLAYING';
+                }
+            }
+
+            drawField(CTX);
+            ball.draw(CTX);
+            players.forEach(p => p.draw(CTX));
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showResult() {
+            document.getElementById('resultScreen').style.display = 'block';
+            document.getElementById('finalScore').innerText = `${scoreHome} - ${scoreAway}`;
+        }
+
+        // ==========================================
+        // 9. AVVIO
+        // ==========================================
+        function startSimulation() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            
+            initGame();
+            GAME_STATE = 'PLAYING';
+            lastTimestamp = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
