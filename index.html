@@ -81,7 +81,9 @@
         .range-slider { width: 150px; accent-color: var(--primary); }
         .select-box { background: #1f2937; color: white; border: 1px solid #374151; padding: 8px; border-radius: 6px; font-family: var(--font-main); outline: none; }
 
-        .btn-action { background: linear-gradient(90deg, #00ff88, #00b894); color: var(--dark); border: none; padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 900; width: 100%; cursor: pointer; margin-top: 20px; font-family: var(--font-main); }
+        .btn-action { background: linear-gradient(90deg, #00ff88, #00b894); color: var(--dark); border: none; padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 900; width: 100%; cursor: pointer; margin-top: 20px; font-family: var(--font-main); transition: 0.2s; }
+        .btn-action:hover { transform: scale(1.02); }
+        
         #matchScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; }
         #matchScreen.active { display: flex; }
         .match-hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 15, 0.9); border: 2px solid var(--primary); padding: 10px 30px; border-radius: 12px; display: flex; gap: 25px; font-weight: 900; font-size: 22px; z-index: 210; }
@@ -90,16 +92,12 @@
         .goal-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 100px; font-weight: 900; color: var(--primary); display: none; z-index: 300; animation: pulse 0.5s infinite alternate; }
         #resultScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 15, 0.95); border: 3px solid var(--primary); padding: 50px; border-radius: 20px; text-align: center; z-index: 400; }
         
-        /* Carriera */
         .career-stats { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
         .stat-box { background: var(--card-bg); padding: 15px 30px; border-radius: 12px; border: 1px solid #374151; text-align: center; }
         .stat-box h4 { color: var(--text-muted); font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
         .stat-box span { font-size: 24px; font-weight: 900; color: var(--primary); }
         
-        /* Meteo */
         .weather-icon { font-size: 30px; margin-right: 10px; vertical-align: middle; }
-        
-        /* Lista infortuni */
         .injury-list { color: var(--danger); font-size: 13px; margin-top: 10px; }
     </style>
 </head>
@@ -141,11 +139,9 @@
 
             <div class="team-layout">
                 <div class="pitch-area" id="pitchArea">
-                    <!-- Giocatori generati via JS -->
                 </div>
                 <div class="bench-area" id="benchArea">
                     <h4 style="margin-bottom: 10px; color: var(--primary);">PANCHINA</h4>
-                    <!-- Panchina generata via JS -->
                 </div>
             </div>
         </div>
@@ -261,7 +257,7 @@
 
     <script>
         // =================================================================
-        // 1. DATABASE GIOCATORI E GENERAZIONE
+        // 1. DATABASE E GESTIONE SALVATAGGIO (SICURO)
         // =================================================================
         let coins = 5000;
         let career = { level: 1, wins: 0, losses: 0, goals: 0 };
@@ -270,69 +266,56 @@
         const lastNames = ["VANCE", "RYDER", "KANE", "ROCKS", "BLADE", "STORM", "VELTRO", "ASTRO", "TITANO", "FULMINE", "FALCO", "WOLF", "HAWK", "VIPER", "COBRA", "DRAGON", "PHOENIX", "GHOST", "SHADOW", "THUNDER", "NOVA", "QUANTUM", "ZERO", "OMEGA", "ALPHA", "BETA", "GAMMA"];
         const positions = ["ATT", "CEN", "DIF", "POR"];
 
-        let myTeam = []; // 18 giocatori: 11 titolari + 7 panchina
+        let myTeam = [];
         let shopData = [];
         let selectedPitchPlayer = null;
         let gameSpeed = 1.0;
         let masterVolume = 0.5;
         let difficulty = 1.0;
         let currentWeather = 'clear';
-        
         let substitutionsLeft = 5;
 
-        // Salvataggio locale
         function saveGame() {
-            const saveData = {
-                coins: coins,
-                career: career,
-                myTeam: myTeam
-            };
-            localStorage.setItem('eclipse_save', JSON.stringify(saveData));
+            const saveData = { coins: coins, career: career, myTeam: myTeam };
+            localStorage.setItem('eclipse_save_v2', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            const saved = localStorage.getItem('eclipse_save');
+            const saved = localStorage.getItem('eclipse_save_v2');
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
                     coins = data.coins || 5000;
                     career = data.career || { level: 1, wins: 0, losses: 0, goals: 0 };
-                    if (data.myTeam && data.myTeam.length > 0) {
+                    if (data.myTeam && Array.isArray(data.myTeam) && data.myTeam.length >= 11) {
                         myTeam = data.myTeam;
                     }
-                } catch (e) {
-                    console.error("Errore caricamento", e);
-                }
+                } catch (e) { console.log("Nessun salvataggio valido."); }
             }
         }
 
-        // Generazione
         function generatePlayer(ovrRange = [60, 85]) {
             const name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
             const ovr = Math.floor(Math.random() * (ovrRange[1] - ovrRange[0] + 1)) + ovrRange[0];
             const pos = positions[Math.floor(Math.random() * positions.length)];
             const price = Math.floor(ovr * 15);
-            const stamina = 100;
-            const injury = 0;
-            return { id: Date.now() + Math.random(), name, ovr, pos, price, stamina, injury };
+            return { id: Date.now() + Math.random(), name, ovr, pos, price, stamina: 100, injury: 0 };
         }
 
-        // Inizializza il database se non caricato
-        if (myTeam.length === 0) {
-            for (let i = 0; i < 50; i++) {
-                shopData.push(generatePlayer([60, 95]));
-            }
-            // Prendi i migliori per la tua squadra iniziale
-            shopData.sort((a, b) => b.ovr - a.ovr);
-            myTeam = shopData.splice(0, 18);
-            
-            // Aggiungi i campioni fissi
+        // Inizializza se necessario
+        loadGame();
+        if (myTeam.length < 11) {
+            myTeam = [];
+            for (let i = 0; i < 18; i++) myTeam.push(generatePlayer([65, 85]));
             myTeam[0] = { id: 1, name: "L. VANCE", ovr: 114, pos: "ATT", price: 0, stamina: 100, injury: 0 };
             myTeam[1] = { id: 2, name: "K. RYDER", ovr: 116, pos: "ATT", price: 0, stamina: 100, injury: 0 };
         }
+        if (shopData.length === 0) {
+            for (let i = 0; i < 50; i++) shopData.push(generatePlayer([60, 95]));
+        }
 
         // =================================================================
-        // 2. AUDIO ENGINE
+        // 2. AUDIO
         // =================================================================
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
@@ -363,7 +346,7 @@
         function changeSpeed(val) { gameSpeed = parseFloat(val); }
 
         // =================================================================
-        // 3. UI E STATISTICHE
+        // 3. UI E NAVIGAZIONE
         // =================================================================
         function updateCareerUI() {
             document.getElementById('statLevel').innerText = career.level;
@@ -414,19 +397,15 @@
             }
         }
 
-        // =================================================================
-        // 4. GESTIONE ROSA E INFORTUNI
-        // =================================================================
         function renderTeamManager() {
             const pitch = document.getElementById('pitchArea');
             const bench = document.getElementById('benchArea');
             pitch.innerHTML = '';
             
             const positions = [
-                { top: '90%', left: '50%' }, // POR
-                { top: '70%', left: '20%' }, { top: '70%', left: '40%' }, { top: '70%', left: '60%' }, { top: '70%', left: '80%' }, // DIF
-                { top: '45%', left: '20%' }, { top: '45%', left: '40%' }, { top: '45%', left: '60%' }, { top: '45%', left: '80%' }, // CEN
-                { top: '20%', left: '35%' }, { top: '20%', left: '65%' } // ATT
+                { top: '90%', left: '50%' }, { top: '70%', left: '20%' }, { top: '70%', left: '40%' }, { top: '70%', left: '60%' }, { top: '70%', left: '80%' },
+                { top: '45%', left: '20%' }, { top: '45%', left: '40%' }, { top: '45%', left: '60%' }, { top: '45%', left: '80%' },
+                { top: '20%', left: '35%' }, { top: '20%', left: '65%' }
             ];
 
             const starters = myTeam.slice(0, 11);
@@ -460,14 +439,8 @@
         }
 
         function swapPlayer(benchPlayer) {
-            if (!selectedPitchPlayer) {
-                alert("Prima seleziona un giocatore in campo!");
-                return;
-            }
-            if (substitutionsLeft <= 0) {
-                alert("Hai finito le sostituzioni!");
-                return;
-            }
+            if (!selectedPitchPlayer) return alert("Prima seleziona un giocatore in campo!");
+            if (substitutionsLeft <= 0) return alert("Hai finito le sostituzioni!");
 
             const starterIndex = myTeam.indexOf(selectedPitchPlayer);
             const benchIndex = myTeam.indexOf(benchPlayer);
@@ -483,7 +456,7 @@
         }
 
         // =================================================================
-        // 5. MOTORE FISICO
+        // 4. MOTORE FISICO
         // =================================================================
         class Vector2 {
             constructor(x = 0, y = 0) { this.x = x; this.y = y; }
@@ -543,11 +516,11 @@
                 const goalBottom = FIELD_HEIGHT / 2 + 60;
 
                 if (this.pos.x - this.radius < 0) {
-                    if (this.pos.y > goalTop && this.pos.y < goalBottom) { /* Goal */ } 
+                    if (this.pos.y > goalTop && this.pos.y < goalBottom) { } 
                     else { this.pos.x = this.radius; this.vel.x *= -this.restitution; }
                 }
                 if (this.pos.x + this.radius > FIELD_WIDTH) {
-                    if (this.pos.y > goalTop && this.pos.y < goalBottom) { /* Goal */ } 
+                    if (this.pos.y > goalTop && this.pos.y < goalBottom) { } 
                     else { this.pos.x = FIELD_WIDTH - this.radius; this.vel.x *= -this.restitution; }
                 }
                 if (this.pos.y - this.radius < 0) { this.pos.y = this.radius; this.vel.y *= -this.restitution; }
@@ -565,7 +538,7 @@
             constructor(x, y, teamColor, role, isHome, name, stamina) {
                 super(x, y, 15, 1, teamColor);
                 this.role = role; this.basePos = new Vector2(x, y); this.isHome = isHome; this.name = name;
-                this.stamina = stamina;
+                this.stamina = stamina || 100;
             }
 
             updateAI(ball, allPlayers, dt) {
@@ -627,10 +600,12 @@
             
             draw(ctx) {
                 super.draw(ctx);
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px Montserrat';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.name.split(' ')[1], this.pos.x, this.pos.y - 20);
+                if (this.name) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px Montserrat';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.name.split(' ')[1] || this.name, this.pos.x, this.pos.y - 20);
+                }
             }
         }
 
@@ -671,9 +646,8 @@
             scoreHome = 0; scoreAway = 0; matchTime = 90;
             substitutionsLeft = 5;
 
-            // Meteo
             const weatherSelect = document.getElementById('weatherSelect');
-            let weather = weatherSelect.value;
+            let weather = weatherSelect ? weatherSelect.value : 'clear';
             if (weather === 'random') {
                 const options = ['clear', 'rain', 'snow'];
                 weather = options[Math.floor(Math.random() * options.length)];
@@ -685,33 +659,24 @@
             if (weather === 'rain') { weatherText = "🌧️ Pioggia"; weatherIcon = "🌧️"; }
             if (weather === 'snow') { weatherText = "❄️ Neve"; weatherIcon = "❄️"; }
             
-            document.getElementById('weatherDisplay').innerHTML = `<span class="weather-icon">${weatherIcon}</span> ${weatherText}`;
+            const weatherDisplay = document.getElementById('weatherDisplay');
+            if (weatherDisplay) weatherDisplay.innerHTML = `<span class="weather-icon">${weatherIcon}</span> ${weatherText}`;
 
-            // Modifica fisica in base al meteo
-            if (currentWeather === 'rain') {
-                BALL_FRICTION = 0.99;
-                PLAYER_FRICTION = 0.80;
-            } else if (currentWeather === 'snow') {
-                BALL_FRICTION = 0.95;
-                PLAYER_FRICTION = 0.75;
-            } else {
-                BALL_FRICTION = 0.98;
-                PLAYER_FRICTION = 0.85;
-            }
+            if (currentWeather === 'rain') { BALL_FRICTION = 0.99; PLAYER_FRICTION = 0.80; } 
+            else if (currentWeather === 'snow') { BALL_FRICTION = 0.95; PLAYER_FRICTION = 0.75; } 
+            else { BALL_FRICTION = 0.98; PLAYER_FRICTION = 0.85; }
 
             CANVAS.width = FIELD_WIDTH; CANVAS.height = FIELD_HEIGHT;
 
-            // ECLIPSE FC
             const homeStarters = myTeam.slice(0, 11);
             const homePos = [
                 [50, FIELD_HEIGHT/2], [200, FIELD_HEIGHT*0.2], [200, FIELD_HEIGHT*0.4], [200, FIELD_HEIGHT*0.6], [200, FIELD_HEIGHT*0.8],
                 [400, FIELD_HEIGHT*0.25], [400, FIELD_HEIGHT*0.5], [400, FIELD_HEIGHT*0.75], [600, FIELD_HEIGHT*0.3], [600, FIELD_HEIGHT*0.7], [650, FIELD_HEIGHT/2]
             ];
             homeStarters.forEach((p, i) => {
-                players.push(new Player(homePos[i][0], homePos[i][1], '#e63946', p.pos, true, p.name, p.stamina));
+                if(p) players.push(new Player(homePos[i][0], homePos[i][1], '#e63946', p.pos || 'CEN', true, p.name || 'PLAYER', p.stamina));
             });
 
-            // IRON WOLVES
             const awayPos = [
                 [FIELD_WIDTH - 50, FIELD_HEIGHT/2], [FIELD_WIDTH - 200, FIELD_HEIGHT*0.2], [FIELD_WIDTH - 200, FIELD_HEIGHT*0.4], [FIELD_WIDTH - 200, FIELD_HEIGHT*0.6], [FIELD_WIDTH - 200, FIELD_HEIGHT*0.8],
                 [FIELD_WIDTH - 400, FIELD_HEIGHT*0.25], [FIELD_WIDTH - 400, FIELD_HEIGHT*0.5], [FIELD_WIDTH - 400, FIELD_HEIGHT*0.75], [FIELD_WIDTH - 600, FIELD_HEIGHT*0.3], [FIELD_WIDTH - 600, FIELD_HEIGHT*0.7], [FIELD_WIDTH - 650, FIELD_HEIGHT/2]
@@ -773,14 +738,8 @@
                     playSound('whistle');
                     addCommentary(`🏁 Finita! Risultato finale: ${scoreHome} - ${scoreAway}`);
                     
-                    // Aggiorna Carriera
-                    if (scoreHome > scoreAway) {
-                        career.wins++;
-                        coins += 500;
-                        career.level++;
-                    } else if (scoreHome < scoreAway) {
-                        career.losses++;
-                    }
+                    if (scoreHome > scoreAway) { career.wins++; coins += 500; career.level++; } 
+                    else if (scoreHome < scoreAway) { career.losses++; }
                     career.goals += scoreHome;
                     updateCareerUI();
                     saveGame();
@@ -830,13 +789,8 @@
             let homeGoals = Math.floor(Math.random() * 4);
             let awayGoals = Math.floor(Math.random() * 4);
             
-            if (homeGoals > awayGoals) {
-                career.wins++;
-                coins += 500;
-                career.level++;
-            } else if (homeGoals < awayGoals) {
-                career.losses++;
-            }
+            if (homeGoals > awayGoals) { career.wins++; coins += 500; career.level++; } 
+            else if (homeGoals < awayGoals) { career.losses++; }
             career.goals += homeGoals;
             updateCareerUI();
             saveGame();
@@ -852,14 +806,13 @@
         }
 
         function resetCareer() {
-            if (confirm("Sei sicuro di voler resettare la carriera?")) {
-                localStorage.removeItem('eclipse_save');
+            if (confirm("Sei sicuro di voler resettare la carriera? Questo cancellerà tutti i progressi.")) {
+                localStorage.removeItem('eclipse_save_v2');
                 location.reload();
             }
         }
 
-        // Inizializza
-        loadGame();
+        // Inizializza UI
         updateCareerUI();
     </script>
 </body>
